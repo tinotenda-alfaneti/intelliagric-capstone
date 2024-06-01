@@ -78,16 +78,3 @@ def predictfertilizer():
             return json_obj
     except:
         return json.dumps({"error":"Please Enter Valid Data"}, default=Predict.convert)
-
-@web_api.route("/prompt", methods=["GET", "POST"])
-def prompt():
-    try:
-        if request.method == "POST":
-            form_values = json.loads(request.data)
-            input_data = form_values["prompt"]
-            
-            prediction_data = {"answer": Predict.generate_answer(input_data)}
-            json_obj = json.dumps(prediction_data, default=Predict.convert)
-            return json_obj
-    except:
-        return json.dumps({"error":"Please Enter Valid Data"}, default=Predict.convert)

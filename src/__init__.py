@@ -2,11 +2,12 @@ from datetime import timedelta
 from flask import Flask
 import firebase_admin
 import os
+import openai
 from dotenv import load_dotenv
 from firebase_admin import credentials, storage, firestore
 
 web_api = Flask("src")
-web_api.config['SECRET_KEY'] = 'onyumbani'
+web_api.secret_key = os.urandom(24)
 
 load_dotenv('.env')
 API_KEY = os.getenv('API_KEY')
@@ -14,6 +15,8 @@ PROJECT_ID = os.getenv('PROJECT_ID')
 PRIVATE_KEY_ID = os.getenv('PRIVATE_KEY_ID')
 CLIENT_CERT = os.getenv('CLIENT_CERT')
 AUTH_PROVIDER_CERT = os.getenv('AUTH_PROVIDER_CERT')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+HF_TOKEN = os.getenv('HF_TOKEN')
 
 cred = credentials.Certificate({
   "type": "service_account",
@@ -34,5 +37,6 @@ cred = credentials.Certificate({
 firebase_admin.initialize_app(credential=cred, options={'storageBucket': 'intelliagric-c1df6.appspot.com'})
 bucket = storage.bucket()
 database = firestore.client()
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 from src.controllers import *

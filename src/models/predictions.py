@@ -1,15 +1,11 @@
 import joblib
 import numpy as np
 import os
-import tensorflow
-from transformers import GPT2Tokenizer, TFGPT2LMHeadModel
+import requests
+from src import HF_TOKEN
 
 #TODO: INSTEAD OF USING THESE DUMMY MODELS, LOAD REAL ENDPOINTS OR SAVE REAL MODELS
-# Load the fine-tuned model
-model = TFGPT2LMHeadModel.from_pretrained(os.path.dirname(__file__) + "/fine-tuned-gpt2")
 
-# Initialize the tokenizer
-tokenizer = GPT2Tokenizer.from_pretrained("gpt2-medium")
 
 #TODO: Clean up the path to models looks messy right now
 
@@ -36,6 +32,11 @@ soil_label_dict = {}
 for soil_value in soiltype_label_dict:
     soil_label_dict[soiltype_label_dict[soil_value]] = soil_value
 
+DISEASE_MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/muAtarist/maize_disease_model"
+MARKET_PREDICTION_ENDPOINT = "https://predict-kasxmzorbq-od.a.run.app/predict"
+
+HEADERS = {"Authorization": "Bearer " + HF_TOKEN}
+
 class Predict:
 
     def __init__():
@@ -46,6 +47,36 @@ class Predict:
         if isinstance(o, np.generic):
             return o.item()
         raise TypeError
+    
+    @staticmethod
+    def maize_disease_prediction(filename):
+        with open(filename, "rb") as f:
+            data = f.read()
+        response = requests.post(DISEASE_MODEL_ENDPOINT, headers=HEADERS, data=data).json()
+        highest_prob = max(response, key=lambda x: x['score'])
+        
+        # Extract the label and score
+        label = highest_prob['label']
+        probability = highest_prob['score']
+        
+        # Format the string with the label and probability
+        result = f"With {probability:.3f} probability, the disease is {label}."
+        return result
+    
+    @staticmethod
+    def market_prediction(request_data):
+
+        response = requests.post(url=MARKET_PREDICTION_ENDPOINT, data=request_data).json()
+
+        #TODO: The model should give the actual response or the mean crop value instead of us calculating from scratch again
+        if response['prediction'] > 10000:
+            return "Supply of will be high, therefore demand is likely going to be low and the prices will be lower."
+        elif response['prediction'] < 10000:
+            return "Supply will be low, therefore demand is likely going to be high and the prices will be higher."
+        else:
+            return "Supply and demand are likely to be equal and the prices will be the same."
+
+
 
     @staticmethod
     def crop_prediction(input_data):
@@ -71,8 +102,6 @@ class Predict:
                 prediction_data["rf_model_probability"],
                 prediction_data["knn_model_probability"],
             ]
-
-        print(all_probs)
 
         if len(set(all_predictions)) == len(all_predictions):
             prediction_data["final_prediction"] = all_predictions[all_probs.index(max(all_probs))]
@@ -115,22 +144,3 @@ class Predict:
             prediction_data["final_prediction"] = max(set(all_predictions), key=all_predictions.count)
 
         return prediction_data
-    
-    @staticmethod
-    def generate_answer(prompt):
-        # Encode the prompt
-        input_ids = tokenizer.encode(prompt, return_tensors="tf")
-
-        # Generate text using the model
-        output = model.generate(
-            input_ids=input_ids,
-            max_length=max_length,
-            num_return_sequences=1,
-            do_sample=True,
-            temperature=0.7,
-        )
-
-        # Decode the generated text
-        generated_text = tokenizer.decode(output[0])
-
-        return generated_text

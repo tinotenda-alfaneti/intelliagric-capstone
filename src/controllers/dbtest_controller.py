@@ -1,5 +1,4 @@
 from src import web_api
-from flask import request
 from src import database
 import json
 
@@ -15,6 +14,17 @@ def index():
     except:
         return json.dumps({"error":"Please Enter Valid Data"}, default=TypeError)
 
+#TODO: Instead of saving everything, we give the option to the user, they get to save what they want and then this will be the history
+#TODO: Adding a button on each response to be able to save it
+"""
+Saves a history entry to the database.
+
+This function adds a new document to the 'history_db' database with the following data:
+- 'role': 'user'
+- 'content': {'answer': "Use fertilizers based on the specific nutrient deficiencies identified in your analysis?", 'topic': "farming"}
+
+If the operation is successful, it returns a JSON response with the message "Data Added Successfully". If there is an error, it returns a JSON response with the message "Please Enter Valid Data".
+"""
 @web_api.route("/save_history", methods=["GET", "POST"])
 def savehistory():
     try:

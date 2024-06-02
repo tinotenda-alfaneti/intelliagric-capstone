@@ -4,10 +4,14 @@ import firebase_admin
 import os
 import openai
 from dotenv import load_dotenv
-from firebase_admin import credentials, storage, firestore
+from firebase_admin import credentials, storage, firestore, db
+import logging
 
 web_api = Flask("src")
 web_api.secret_key = os.urandom(24)
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
 
 load_dotenv('.env')
 API_KEY = os.getenv('API_KEY')
@@ -35,9 +39,10 @@ cred = credentials.Certificate({
 })
 
 
-firebase_admin.initialize_app(credential=cred, options={'storageBucket': 'intelliagric-c1df6.appspot.com'})
+firebase_admin.initialize_app(credential=cred, options={'storageBucket': 'intelliagric-c1df6.appspot.com', 'databaseURL': 'https://intelliagric-c1df6-default-rtdb.firebaseio.com'})
 bucket = storage.bucket()
 database = firestore.client()
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
+db_ref = db.reference('/test') #TODO: Replace with actual endpoint here
 
 from src.controllers import *

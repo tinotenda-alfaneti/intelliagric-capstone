@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Real-Time Data</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            function fetchData() {
+                $.ajax({
+                    url: '/get-data',
+                    method: 'GET',
+                    success: function(data) {
+                        $('#float-data').text('Float Data: ' + JSON.stringify(data.float));
+                        $('#int-data').text('Int Data: ' + JSON.stringify(data.int));
+                    },
+                    error: function(err) {
+                        console.log('Error fetching data:', err);
+                    }
+                });
+            }
+
+            // Fetch data every 5 seconds
+            setInterval(fetchData, 5000);
+            fetchData();
+        });
+    </script>
+</head>
+<body>
+    <h1>Real-Time Data</h1>
+    <div id="float-data">Float Data: </div>
+    <div id="int-data">Int Data: </div>
+</body>
+</html>

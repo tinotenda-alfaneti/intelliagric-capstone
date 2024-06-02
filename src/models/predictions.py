@@ -2,40 +2,94 @@ import joblib
 import numpy as np
 import os
 import requests
+import requests
+import datetime
+import pandas as pd 
 from src import HF_TOKEN
-
-#TODO: INSTEAD OF USING THESE DUMMY MODELS, LOAD REAL ENDPOINTS OR SAVE REAL MODELS
-
+from src import WEATHER_API_KEY
 
 #TODO: Clean up the path to models looks messy right now
 
-# Loading all Crop Recommendation Models
-crop_rf_pipeline = joblib.load(os.path.dirname(__file__) + "/ml_models/crop_recommendation/rf_pipeline.pkl")
-crop_knn_pipeline = joblib.load(os.path.dirname(__file__) + "/ml_models/crop_recommendation/knn_pipeline.pkl")
-crop_label_dict = joblib.load(os.path.dirname(__file__) + "/ml_models/crop_recommendation/label_dictionary.pkl")
+# Loading Market Recommendation Model
+market_pred_pipeline = joblib.load(os.path.dirname(__file__) + "/ml_models/market_recommendation/stacking_pipeline.pkl")
+crop_yields_data = os.path.dirname(__file__) + "/ml_models/crops_dataset/crop_yields_dataset.csv"
 
-
-# Loading all Fertilizer Recommendation Models
-fertilizer_rf_pipeline = joblib.load(os.path.dirname(__file__) + "/ml_models/fertilizer_recommendation/rf_pipeline.pkl")
-fertilizer_svm_pipeline = joblib.load(os.path.dirname(__file__) + "/ml_models/fertilizer_recommendation/svm_pipeline.pkl")
-fertilizer_label_dict = joblib.load(os.path.dirname(__file__) + "/ml_models/fertilizer_recommendation/fertname_dict.pkl")
-soiltype_label_dict = joblib.load(os.path.dirname(__file__) + "/ml_models/fertilizer_recommendation/soiltype_dict.pkl")
-croptype_label_dict = joblib.load(os.path.dirname(__file__) + "/ml_models/fertilizer_recommendation/croptype_dict.pkl")
 
 max_length = 100
 
-crop_label_name_dict = {}
-for crop_value in croptype_label_dict:
-    crop_label_name_dict[croptype_label_dict[crop_value]] = crop_value
-
-soil_label_dict = {}
-for soil_value in soiltype_label_dict:
-    soil_label_dict[soiltype_label_dict[soil_value]] = soil_value
-
 DISEASE_MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/muAtarist/maize_disease_model"
-MARKET_PREDICTION_ENDPOINT = "https://predict-kasxmzorbq-od.a.run.app/predict"
 
 HEADERS = {"Authorization": "Bearer " + HF_TOKEN}
+
+YEAR = datetime.date.today().year
+
+def _get_country_coordinates(country_name):
+    # Construct the URL for the weather API
+    url = f'https://api.openweathermap.org/data/2.5/weather?q={country_name}&appid={WEATHER_API_KEY}'
+    
+    response = requests.get(url)
+    data = response.json()
+    
+    # Extract the coordinates
+    try:
+        lon = data['coord']['lon']
+        lat = data['coord']['lat']
+        return lon, lat
+    except KeyError:
+        print("Error: Unable to retrieve coordinates for the specified country.")
+        return None, None
+
+def _get_yearly_weather_data(year, area):
+    lon, lat = _get_country_coordinates(area)
+
+    base_url = f'https://api.openweathermap.org/data/3.0/onecall/day_summary?lat={lat}&lon={lon}'
+    start_date = datetime.date(year, 6, 1)
+    end_date = datetime.date(year, 6, 5)
+    delta = datetime.timedelta(days=1)
+    current_date = start_date
+    daily_temps = []
+    daily_precip = []
+
+    while current_date <= end_date:
+        formatted_date = current_date.strftime("%Y-%m-%d")
+        url = f"{base_url}&date={formatted_date}&appid={WEATHER_API_KEY}"
+        response = requests.get(url)
+        data = response.json()
+        # print(data)
+
+        try:
+            min_temp_fahrenheit = data["temperature"]["min"]
+            max_temp_fahrenheit = data["temperature"]["max"]
+            precip = data["precipitation"]["total"] * 24
+
+            # Convert temperatures to Celsius
+            min_temp_celsius = min_temp_fahrenheit - 273.15
+            max_temp_celsius = max_temp_fahrenheit - 273.15
+            average_temp_celsius = (min_temp_celsius + max_temp_celsius) / 2
+
+            daily_temps.append(average_temp_celsius)
+            if precip is not None and isinstance(precip, (int, float)) and precip >= 0:
+                daily_precip.append(precip)
+
+        except (KeyError, TypeError, ValueError) as e:
+            print(f"Skipping data for {formatted_date} due to error: {e}")
+        current_date += delta
+
+    # Calculate the average temperature and precipitation for the year
+    if daily_temps and daily_precip:
+        average_temp_year = sum(daily_temps) / len(daily_temps)
+        average_precip_year = sum(daily_precip) / len(daily_precip)
+    else:
+        average_temp_year = None
+        average_precip_year = None
+    
+    if average_temp_year is not None and average_precip_year is not None:
+        print(f"Average Temperature for the year: {average_temp_year:.2f} °C")
+        print(f"Average Precipitation for the year: {average_precip_year:.2f} mm")
+    else:
+        print("No valid data available for the year.")
+
+    return average_temp_year, average_precip_year
 
 class Predict:
 
@@ -63,84 +117,44 @@ class Predict:
         result = f"With {probability:.3f} probability, the disease is {label}."
         return result
     
+
     @staticmethod
     def market_prediction(request_data):
+        average_temp_year, average_precip_year = _get_yearly_weather_data(YEAR, request_data["area"])
 
-        response = requests.post(url=MARKET_PREDICTION_ENDPOINT, data=request_data).json()
-
-        #TODO: The model should give the actual response or the mean crop value instead of us calculating from scratch again
-        if response['prediction'] > 10000:
-            return "Supply of will be high, therefore demand is likely going to be low and the prices will be lower."
-        elif response['prediction'] < 10000:
-            return "Supply will be low, therefore demand is likely going to be high and the prices will be higher."
-        else:
-            return "Supply and demand are likely to be equal and the prices will be the same."
-
-
-
-    @staticmethod
-    def crop_prediction(input_data):
-        prediction_data = {
-            "rf_model_prediction": crop_label_dict[crop_rf_pipeline.predict(input_data)[0]],
-            "rf_model_probability": max(crop_rf_pipeline.predict_proba(input_data)[0])
-            * 100,
-            "knn_model_prediction": crop_label_dict[
-                crop_knn_pipeline.predict(input_data)[0]
-            ],
-            "knn_model_probability": max(crop_knn_pipeline.predict_proba(input_data)[0])
-            * 100,
+        data = {
+            "Area": request_data["area"],
+            "Item": request_data["item"],
+            "average_rain_fall_mm_per_year": average_precip_year,
+            "avg_temp": average_temp_year
         }
 
-        all_predictions = [
-                prediction_data["rf_model_prediction"],
-                prediction_data["knn_model_prediction"],
-            ]
-        
-        
+        print("Average Temp:", data['avg_temp'])
+        print("Average Precip:", data["average_rain_fall_mm_per_year"])
 
-        all_probs = [
-                prediction_data["rf_model_probability"],
-                prediction_data["knn_model_probability"],
-            ]
+        dataset = pd.read_csv(crop_yields_data)
 
-        if len(set(all_predictions)) == len(all_predictions):
-            prediction_data["final_prediction"] = all_predictions[all_probs.index(max(all_probs))]
+         # Convert the JSON data into a DataFrame
+        input_df = pd.DataFrame([data])
+        
+        # Predict using the loaded pipeline
+        prediction = market_pred_pipeline.predict(input_df)
+
+        if prediction is None:
+            print("Prediction key not found in the response")
+            return 
+
+        print(f"Prediction: {prediction[0]}")
+
+        df = pd.DataFrame(dataset)
+        result = df.groupby(['Item'])['hg/ha_yield'].agg(['mean', 'min', 'max']).reset_index()
+
+        predicted_crop = data['Item']
+        mean_yield = result[result['Item'] == predicted_crop]['mean'].values[0]
+
+        if prediction[0] > mean_yield - (0.75 * mean_yield):
+            demand_prediction = 'LOW'
         else:
-            prediction_data["final_prediction"] = max(set(all_predictions), key=all_predictions.count)
+            demand_prediction = 'HIGH'
 
-        
-        return prediction_data
-
-    @staticmethod
-    def fertilizer_prediction(input_data):
-        prediction_data = {
-            "rf_model_prediction": fertilizer_label_dict[
-                fertilizer_rf_pipeline.predict(input_data)[0]
-            ],
-            "rf_model_probability": max(fertilizer_rf_pipeline.predict_proba(input_data)[0])
-            * 100,
-            "svm_model_prediction": fertilizer_label_dict[
-                fertilizer_svm_pipeline.predict(input_data)[0]
-            ],
-            "svm_model_probability": max(
-                fertilizer_svm_pipeline.predict_proba(input_data)[0]
-            )
-            * 100,
-        }
-
-        all_predictions = [
-                prediction_data["rf_model_prediction"],
-                prediction_data["svm_model_prediction"],
-            ]
-
-        all_probs = [
-                prediction_data["rf_model_probability"],
-                prediction_data["svm_model_probability"],
-            ]
-
-        if len(set(all_predictions)) == len(all_predictions):
-            prediction_data["final_prediction"] = all_predictions[all_probs.index(max(all_probs))]
-        else:
-            prediction_data["final_prediction"] = max(set(all_predictions), key=all_predictions.count)
-
-        return prediction_data
+        return f"Demand for {predicted_crop} is likely going to be {demand_prediction} since supply prediction is {prediction} and past mean yield is {mean_yield}. [Assumption: Demand and supply are inversely proportional]"

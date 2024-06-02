@@ -43,6 +43,9 @@ CHAT_PROMPT = [
 
                 User: I'm observing irregularities in my maize field. How can I assess if these are symptoms of a disease outbreak?
                 Assistant: predict maize disease
+
+                User: I'm want to give you images so that you help me see what disease is affecting my maize
+                Assistant: predict maize disease
                 
                 ### general intent
                 User: How do I improve soil fertility?

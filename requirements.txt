@@ -60,6 +60,7 @@ openai==1.30.5
 opt-einsum==3.3.0
 optree==0.11.0
 packaging==24.0
+pandas==2.2.2
 proto-plus==1.23.0
 protobuf==4.25.3
 pyasn1==0.6.0
@@ -70,7 +71,9 @@ pydantic_core==2.18.3
 Pygments==2.18.0
 PyJWT==2.8.0
 pyparsing==3.1.2
+python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
+pytz==2024.1
 PyYAML==6.0.1
 regex==2024.5.15
 requests==2.31.0
@@ -96,7 +99,9 @@ torch==2.3.0
 tqdm==4.66.4
 transformers==4.40.2
 typing_extensions==4.11.0
+tzdata==2024.1
 uritemplate==4.1.1
 urllib3==2.2.1
 Werkzeug==3.0.3
 wrapt==1.16.0
+xgboost==2.0.3

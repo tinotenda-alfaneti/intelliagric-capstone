@@ -1,18 +1,17 @@
 from src import web_api
 from flask import request, jsonify, session
-import requests
 import os
 from src.models.chat import Chat
 from src.models.chat import CHAT_PROMPT
-from src.models.predictions import MARKET_MODEL_ENDPOINT, DISEASE_MODEL_ENDPOINT, Predict
+from src.models.predictions import Predict
 
 HISTORY_LIMIT = 10
 TEST_IMG = os.path.dirname(__file__) + "/uploads/example.jpg"
+
+#TODO: Fix this so that data coming can have varying item name. The chat model should capture the crop also and return in as part of the response
 TEST_DATA = {
-    "Area": "Ghana",
-    "Item": "Maize",
-    "average_rain_fall_mm_per_year": 1200,
-    "avg_temp": 28.4
+    "area": "Ghana",
+    "item": "Maize"
   }
 
 

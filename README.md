@@ -2,7 +2,7 @@
 
 ## How to test
 
-Request the environment variable and trained models - `ml_models` and `fine-tuned-gpt2`
+Request the environment variable and trained models - `ml_models` and `api keys`
 
 Place the folders inside the `models` directory
 

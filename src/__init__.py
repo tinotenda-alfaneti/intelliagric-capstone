@@ -17,6 +17,7 @@ CLIENT_CERT = os.getenv('CLIENT_CERT')
 AUTH_PROVIDER_CERT = os.getenv('AUTH_PROVIDER_CERT')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 HF_TOKEN = os.getenv('HF_TOKEN')
+WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')
 
 cred = credentials.Certificate({
   "type": "service_account",

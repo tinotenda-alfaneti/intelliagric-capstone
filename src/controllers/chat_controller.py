@@ -14,7 +14,6 @@ TEST_DATA = {
     "item": "Maize"
   }
 
-
 '''
 Example of input data:
 #generate_answer(input_data)
@@ -44,6 +43,7 @@ def chat():
 
     if 'predict maize disease' in intent_response.lower():
         #TODO: Add functionality to take the image from the user and then use the path here
+        #TODO: Make the user upload the image here - endpoint /upload-image
         model_response = Predict.maize_disease_prediction(TEST_IMG)
         print(model_response)
         refined_response = Chat.refine_response(user_input, model_response)
@@ -51,6 +51,7 @@ def chat():
         return jsonify({'intent': 'predict maize disease', 'message': refined_response})
     
     elif 'predict agriculture market' in intent_response.lower():
+        #TODO: Add a popup form to capture the area and item
         market_response = Predict.market_prediction(TEST_DATA)
         refined_response = Chat.refine_response(user_input, market_response)
         session['conversation_history'].append({"role": "assistant", "content": refined_response})

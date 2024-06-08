@@ -43,6 +43,6 @@ firebase_admin.initialize_app(credential=cred, options={'storageBucket': 'intell
 bucket = storage.bucket()
 database = firestore.client()
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
-db_ref = db.reference('/test') #TODO: Replace with actual endpoint here
+db_ref = db.reference('/device') #TODO: Replace with actual endpoint here
 
 from src.controllers import *

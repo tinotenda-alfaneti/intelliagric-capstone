@@ -11,8 +11,10 @@
                     url: '/get-data',
                     method: 'GET',
                     success: function(data) {
-                        $('#float-data').text('Float Data: ' + JSON.stringify(data.float));
-                        $('#int-data').text('Int Data: ' + JSON.stringify(data.int));
+                        $('#mois-data').text('Moisture Data: ' + JSON.stringify(data.mois));
+                        $('#ph-data').text('pH Data: ' + JSON.stringify(data.ph));
+                        $('#npk-data').text('NPK Data: ' + JSON.stringify(data.npk));
+                        $('#temp-data').text('Temperature Data: ' + JSON.stringify(data.temp));
                     },
                     error: function(err) {
                         console.log('Error fetching data:', err);
@@ -28,7 +30,9 @@
 </head>
 <body>
     <h1>Real-Time Data</h1>
-    <div id="float-data">Float Data: </div>
-    <div id="int-data">Int Data: </div>
+    <div id="mois-data">Moisture Data: </div>
+    <div id="ph-data">pH Data: </div>
+    <div id="temp-data">Temperature Data: </div>
+    <div id="npk-data">NPK Data: </div>
 </body>
 </html>

@@ -1,15 +1,18 @@
-from flask import jsonify, render_template
+from flask import jsonify, render_template, request
 import threading
 from datetime import datetime
 import atexit
+import requests
 from apscheduler.schedulers.background import BackgroundScheduler
-
-from src import logging, web_api, database, db_ref
+from src.models.chat import Chat
+from src import logging, web_api, database, db_ref, OPENAI_API_KEY
 
 # Store the accumulated data
 accumulated_data = {
-    'float': [],
-    'int': []
+    'mois': [],
+    'ph': [],
+    'npk': [],
+    'temp': []
 }
 
 data_lock = threading.Lock()
@@ -19,14 +22,22 @@ def transfer_data(event):
     with data_lock:
         try:
             logging.debug(f"Event received: {event.path} - {event.data}")
-            if event.path == '/float':
+            if event.path == '/mois':
                 if event.data is not None:
-                    accumulated_data['float'].append(event.data)
-                    logging.debug(f"Accumulated float data: {accumulated_data['float']}")
-            elif event.path == '/int':
+                    accumulated_data['mois'].append(event.data)
+                    logging.debug(f"Accumulated moisture data: {accumulated_data['mois']}")
+            elif event.path == '/ph':
                 if event.data is not None:
-                    accumulated_data['int'].append(event.data)
-                    logging.debug(f"Accumulated int data: {accumulated_data['int']}")
+                    accumulated_data['ph'].append(event.data)
+                    logging.debug(f"Accumulated pH data: {accumulated_data['ph']}")
+            elif event.path == '/npk':
+                if event.data is not None:
+                    accumulated_data['npk'].append(event.data)
+                    logging.debug(f"Accumulated NPK data: {accumulated_data['npk']}")
+            elif event.path == '/temp':
+                if event.data is not None:
+                    accumulated_data['temp'].append(event.data)
+                    logging.debug(f"Accumulated temperature data: {accumulated_data['temp']}")
         except Exception as e:
             logging.error(f"Error in transfer_data: {e}")
 
@@ -37,12 +48,18 @@ def watch_realtime_db():
         initial_data = db_ref.get()
         logging.debug(f"Initial data: {initial_data}")
         if initial_data:
-            if 'float' in initial_data and initial_data['float'] is not None:
-                accumulated_data['float'].append(initial_data['float'])
-                logging.debug(f"Initial accumulated float data: {accumulated_data['float']}")
-            if 'int' in initial_data and initial_data['int'] is not None:
-                accumulated_data['int'].append(initial_data['int'])
-                logging.debug(f"Initial accumulated int data: {accumulated_data['int']}")
+            if 'mois' in initial_data and initial_data['mois'] is not None:
+                accumulated_data['mois'].append(initial_data['mois'])
+                logging.debug(f"Initial accumulated moisture data: {accumulated_data['mois']}")
+            if 'npk' in initial_data and initial_data['npk'] is not None:
+                accumulated_data['npk'].append(initial_data['npk'])
+                logging.debug(f"Initial accumulated npk data: {accumulated_data['npk']}")
+            if 'temp' in initial_data and initial_data['temp'] is not None:
+                accumulated_data['temp'].append(initial_data['temp'])
+                logging.debug(f"Initial accumulated temp data: {accumulated_data['temp']}")
+            if 'ph' in initial_data and initial_data['ph'] is not None:
+                accumulated_data['ph'].append(initial_data['ph'])
+                logging.debug(f"Initial accumulated pH data: {accumulated_data['ph']}")
         db_ref.listen(transfer_data)
         logging.info("Started listening to Realtime Database")
     except Exception as e:
@@ -54,21 +71,31 @@ def save_daily_average():
         try:
             logging.debug("Calculating daily averages and saving to Firestore.")
             avg_data = {}
-            if accumulated_data['float']:
-                avg_float = sum(accumulated_data['float']) / len(accumulated_data['float'])
-                avg_data['float'] = avg_float
-                logging.info(f"Saved float average: {avg_float}")
-            if accumulated_data['int']:
-                avg_int = sum(accumulated_data['int']) / len(accumulated_data['int'])
-                avg_data['int'] = avg_int
-                logging.info(f"Saved int average: {avg_int}")
+            if accumulated_data['mois']:
+                avg_mois = sum(accumulated_data['mois']) / len(accumulated_data['mois'])
+                avg_data['mois'] = avg_mois
+                logging.info(f"Saved mois average: {avg_mois}")
+            if accumulated_data['npk']:
+                #TODO: Implement NPK calculation when actual value is found
+                avg_data['npk'] = accumulated_data['npk']
+                logging.info(f"Saved npk average: {accumulated_data['npk']}")
+            if accumulated_data['temp']:
+                avg_temp = sum(accumulated_data['temp']) / len(accumulated_data['temp'])
+                avg_data['temp'] = avg_temp
+                logging.info(f"Saved temp average: {avg_temp}")
+            if accumulated_data['ph']:
+                avg_ph = sum(accumulated_data['ph']) / len(accumulated_data['ph'])
+                avg_data['ph'] = avg_ph
+                logging.info(f"Saved pH average: {avg_ph}")
             if avg_data:
                 avg_data['timestamp'] = datetime.now()
                 database.collection('daily_averages').add(avg_data)
                 logging.debug("Saved daily averages")
             # Clear the accumulated data for the next day
-            accumulated_data['float'].clear()
-            accumulated_data['int'].clear()
+            accumulated_data['mois'].clear()
+            accumulated_data['npk'].clear()
+            accumulated_data['ph'].clear()
+            accumulated_data['temp'].clear()
             logging.debug("Cleared accumulated data for the next day.")
         except Exception as e:
             logging.error(f"Error in save_daily_average: {e}")
@@ -83,16 +110,36 @@ scheduler.start()
 # Ensure the scheduler shuts down when the app exits
 atexit.register(lambda: scheduler.shutdown())
 
-# API endpoint to fetch the latest accumulated data
+# API endponpk to fetch the latest accumulated data
 @web_api.route('/get-data', methods=['GET'])
 def get_data():
     with data_lock:
-        float_data = accumulated_data['float'][-1] if accumulated_data['float'] else None
-        int_data = accumulated_data['int'][-1] if accumulated_data['int'] else None
+        mois_data = accumulated_data['mois'][-1] if accumulated_data['mois'] else None
+        npk_data = accumulated_data['npk'][-1] if accumulated_data['npk'] else None
+        temp_data = accumulated_data['temp'][-1] if accumulated_data['temp'] else None
+        ph_data = accumulated_data['ph'][-1] if accumulated_data['ph'] else None
         return jsonify({
-            "float": float_data,
-            "int": int_data
+            "mois": mois_data,
+            "npk": npk_data,
+            "temp": temp_data,
+            "ph": ph_data
         })
+    
+
+@web_api.route('/soil-analysis', methods=['GET'])
+def soil_analysis():
+    # Step 1: Call the /get-data endpoint to retrieve the latest accumulated data
+    get_data_response = requests.get(f'{request.url_root}/get-data')
+    
+    if get_data_response.status_code != 200:
+        return jsonify({"error": "Failed to retrieve data"}), 500
+    
+    data = get_data_response.json()
+    
+    analysis = Chat.soil_analysis(data)
+    
+    return jsonify({"analysis": analysis.strip()})
+
 
 # Serve the HTML file
 @web_api.route('/test')

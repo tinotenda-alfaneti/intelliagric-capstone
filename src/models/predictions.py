@@ -8,16 +8,13 @@ import pandas as pd
 from src import HF_TOKEN
 from src import WEATHER_API_KEY
 
-#TODO: Clean up the path to models looks messy right now
-
-# Loading Market Recommendation Model
-market_pred_pipeline = joblib.load(os.path.dirname(__file__) + "/ml_models/market_recommendation/stacking_pipeline.pkl")
 crop_yields_data = os.path.dirname(__file__) + "/ml_models/crops_dataset/crop_yields_dataset.csv"
 
 
 max_length = 100
 
 DISEASE_MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/muAtarist/maize_disease_model"
+MARKET_MODEL_ENDPOINT = "https://predict-kasxmzorbq-od.a.run.app/predict"
 
 HEADERS = {"Authorization": "Bearer " + HF_TOKEN}
 
@@ -107,7 +104,11 @@ class Predict:
         with open(filename, "rb") as f:
             data = f.read()
         response = requests.post(DISEASE_MODEL_ENDPOINT, headers=HEADERS, data=data).json()
-        highest_prob = max(response, key=lambda x: x['score'])
+        try:
+            highest_prob = max(response, key=lambda x: x['score'])
+        except Exception as e:
+            print(f"Failed to get prediction. Error: {e}")
+            return f"Failed to get prediction. Error: {e}"
         
         # Extract the label and score
         label = highest_prob['label']
@@ -134,17 +135,19 @@ class Predict:
 
         dataset = pd.read_csv(crop_yields_data)
 
-         # Convert the JSON data into a DataFrame
-        input_df = pd.DataFrame([data])
-        
-        # Predict using the loaded pipeline
-        prediction = market_pred_pipeline.predict(input_df)
+        try:
+            response = requests.post(MARKET_MODEL_ENDPOINT, json=data)
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to get prediction. Error: {e}")
+            return
 
+        prediction = response.json().get('prediction', None)
         if prediction is None:
             print("Prediction key not found in the response")
-            return 
+            return
 
-        print(f"Prediction: {prediction[0]}")
+        print(f"Prediction: {prediction}")
 
         df = pd.DataFrame(dataset)
         result = df.groupby(['Item'])['hg/ha_yield'].agg(['mean', 'min', 'max']).reset_index()
@@ -152,7 +155,7 @@ class Predict:
         predicted_crop = data['Item']
         mean_yield = result[result['Item'] == predicted_crop]['mean'].values[0]
 
-        if prediction[0] > mean_yield - (0.75 * mean_yield):
+        if prediction > mean_yield - (0.75 * mean_yield):
             demand_prediction = 'LOW'
         else:
             demand_prediction = 'HIGH'

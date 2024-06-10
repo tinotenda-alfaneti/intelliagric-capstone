@@ -6,8 +6,8 @@ from src.models.chat import CHAT_PROMPT
 from src.models.predictions import Predict
 
 HISTORY_LIMIT = 10
-TEST_IMG = os.path.dirname(__file__) + "/uploads/example.jpg"
 
+TEST_IMG = os.path.dirname(__file__) + "/uploads/example.jpg"
 #TODO: Fix this so that data coming can have varying item name. The chat model should capture the crop also and return in as part of the response
 TEST_DATA = {
     "area": "Ghana",

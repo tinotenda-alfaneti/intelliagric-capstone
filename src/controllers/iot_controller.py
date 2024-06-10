@@ -102,9 +102,9 @@ def save_daily_average():
 
 # Schedule the save_daily_average function to run at midnight
 scheduler = BackgroundScheduler()
-# scheduler.add_job(func=save_daily_average, trigger='cron', hour=0, minute=0)
+scheduler.add_job(func=save_daily_average, trigger='cron', hour=0, minute=0)
 # uncomment for testing
-scheduler.add_job(func=save_daily_average, trigger='interval', seconds=60)
+# scheduler.add_job(func=save_daily_average, trigger='interval', seconds=60)
 scheduler.start()
 
 # Ensure the scheduler shuts down when the app exits

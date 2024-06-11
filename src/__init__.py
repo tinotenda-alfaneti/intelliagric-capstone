@@ -1,5 +1,6 @@
 from datetime import timedelta
 from flask import Flask
+from flask_cors import CORS, cross_origin
 import firebase_admin
 import os
 import openai
@@ -9,6 +10,9 @@ import logging
 
 web_api = Flask("src")
 web_api.secret_key = os.urandom(24)
+
+cors = CORS(web_api)
+web_api.config['CORS_HEADERS'] = 'Content-Type'
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)

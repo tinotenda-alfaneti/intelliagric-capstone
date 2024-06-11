@@ -39,25 +39,32 @@ def chat():
     # Get the intent and initial response from the GPT model
     intent_response = Chat.get_intent_and_response(session['conversation_history'])
 
+    return jsonify({'message': intent_response})
+
+@web_api.route('/predict-disease', methods=['GET'])
+def predict_disease():
+
+    crop_img =  request.json.get('path')
+    user_input = request.json.get('message')
     #TODO: Add another intent for diseases that are not for maize and then use the API from kindwise
 
-    if 'predict maize disease' in intent_response.lower():
-        #TODO: Add functionality to take the image from the user and then use the path here
-        #TODO: Make the user upload the image here - endpoint /upload-image
-        model_response = Predict.maize_disease_prediction(TEST_IMG)
-        print(model_response)
-        refined_response = Chat.refine_response(user_input, model_response)
-        session['conversation_history'].append({"role": "assistant", "content": refined_response})
-        return jsonify({'intent': 'predict maize disease', 'message': refined_response})
+    model_response = Predict.maize_disease_prediction(crop_img)
+    print(model_response)
+    refined_response = Chat.refine_response(user_input, model_response)
+    session['conversation_history'].append({"role": "assistant", "content": refined_response})
+    return jsonify({'intent': 'predict maize disease', 'message': refined_response})
+
+@web_api.route('/predict-market', methods=['GET'])
+def predict_market():
     
-    elif 'predict agriculture market' in intent_response.lower():
-        #TODO: Add a popup form to capture the area and item
-        market_response = Predict.market_prediction(TEST_DATA)
-        refined_response = Chat.refine_response(user_input, market_response)
-        session['conversation_history'].append({"role": "assistant", "content": refined_response})
-        return jsonify({'intent': 'predict agriculture market', 'message': refined_response})
-    else:
-        # If intent is general, return the response directly
-        session['conversation_history'].append({"role": "assistant", "content": intent_response})
-        return jsonify({'intent': 'general', 'message': intent_response})
+    user_data = {
+        "area": request.json.get("area"),
+        "item": request.json.get("item")
+    }
+    user_input = request.json.get("message")
+    
+    market_response = Predict.market_prediction(user_data)
+    refined_response = Chat.refine_response(user_input, market_response)
+    session['conversation_history'].append({"role": "assistant", "content": refined_response})
+    return jsonify({'intent': 'predict agriculture market', 'message': refined_response})
 

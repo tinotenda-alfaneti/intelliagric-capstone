@@ -57,10 +57,6 @@ CHAT_PROMPT = [
                     User: How do I improve soil fertility?
                     Assistant: To improve soil fertility, a holistic approach is recommended. Crop rotation helps prevent nutrient depletion by alternating different crops and fostering soil health. Adding organic matter such as compost or manure enriches soil with essential nutrients. Planting cover crops during fallow periods protects the soil from erosion and adds organic matter and nitrogen. Mulching conserves moisture, suppresses weeds, and improves soil structure. Reducing tillage minimizes soil disturbance, preserving organic matter and beneficial soil organisms. Adjusting soil pH to the optimal level makes nutrients more available to plants.
 
-                    ### Follow-up and context-aware responses
-                    User: What type of cover crops should I use?
-                    Assistant: Considering your interest in improving soil fertility, effective cover crops include legumes like cowpeas or clover, which fix nitrogen in the soil, and grasses such as rye or millet, which add organic matter and improve soil structure. Choose based on your specific soil needs and local climate conditions.
-
                     User: How do I test my soil pH?
                     Assistant: To test your soil pH, you can use a soil pH testing kit available at agricultural supply stores. Collect soil samples from different parts of your field and follow the kit instructions. If your soil pH is too low or too high, you can amend it with lime (to raise pH) or sulfur (to lower pH).
                 """

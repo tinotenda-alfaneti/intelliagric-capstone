@@ -144,7 +144,7 @@ def soil_analysis():
 # Serve the HTML file
 @web_api.route('/test')
 def test():
-    return render_template('index.html')
+    return render_template('index.html.j2')
 
 # Start watching the database as soon as the app starts
 @web_api.before_first_request

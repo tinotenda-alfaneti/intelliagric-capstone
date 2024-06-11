@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soil Analysis Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            function fetchData() {
+                $.ajax({
+                    url: '/get-data',  // Update with the correct endpoint URL
+                    method: 'GET',
+                    success: function(data) {
+                        $('#temp-value').text(data.temp + ' deg. C');
+                        $('#moisture-value').text(data.mois + ' %');
+                        $('#ph-value').text(data.ph);
+                        $('#npk-value').text(data.npk + ' mg/kg');
+                    },
+                    error: function(err) {
+                        console.log('Error fetching data:', err);
+                    }
+                });
+            }
+
+            function fetchSoilAnalysis() {
+                $.ajax({
+                    url: '/soil-analysis', 
+                    method: 'GET',
+                    success: function(data) {
+                        $('#analysis-content').html(data.analysis.replace(/\n/g, '<br>'));
+                    },
+                    error: function(err) {
+                        console.log('Error fetching analysis:', err);
+                    }
+                });
+            }
+
+            // Fetch data every 30 seconds
+            setInterval(fetchData, 30000);
+            fetchData();
+
+            // Manual update button for soil analysis
+            $('#update-button').click(function() {
+                fetchSoilAnalysis();
+            });
+
+            // Initial fetch of soil analysis
+            fetchSoilAnalysis();
+        });
+    </script>
+</head>
+<body>
+    <nav>
+        <div class="navbar">
+            <a href="#">IoT Device Management</a>
+            <a href="#">E-commerce platform</a>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="card">
+            <h2>Soil Temperature</h2>
+            <p class="value" id="temp-value">Loading...</p>
+            <div class="chart"></div>
+        </div>
+        <div class="card">
+            <h2>Soil Moisture</h2>
+            <p class="value" id="moisture-value">Loading...</p>
+            <div class="chart"></div>
+        </div>
+        <div class="card">
+            <h2>Soil pH</h2>
+            <p class="value" id="ph-value">Loading...</p>
+            <div class="chart"></div>
+        </div>
+        <div class="card">
+            <h2>Soil NPK</h2>
+            <p class="value" id="npk-value">Loading...</p>
+            <div class="chart"></div>
+        </div>
+    </div>
+    <div class="analysis-report">
+        <h2>SOIL ANALYSIS REPORT</h2>
+        <p id="analysis-content">Loading analysis...</p>
+        <button id="update-button">Update Analysis</button>
+    </div>
+    
+
+</body>
+</html>

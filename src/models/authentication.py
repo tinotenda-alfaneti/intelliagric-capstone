@@ -1,7 +1,6 @@
 import json
 import urllib3
 from src import API_KEY
-import firebase_admin
 from firebase_admin import auth
 
 

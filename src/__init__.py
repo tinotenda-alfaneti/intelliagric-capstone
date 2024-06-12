@@ -1,4 +1,6 @@
-from flask import Flask
+from datetime import timedelta
+from flask import Flask, session
+from flask_session import Session
 from flask_cors import CORS
 import firebase_admin
 import os
@@ -9,6 +11,12 @@ import logging
 from newsapi import NewsApiClient
 
 web_api = Flask("src")
+web_api.config["SESSION_PERMANENT"] = False
+web_api.config["SESSION_TYPE"] = "filesystem"
+web_api.config['PERMANENT_SESSION_LIFETIME'] =  timedelta(minutes=45)
+
+Session(web_api)
+
 web_api.secret_key = os.urandom(24)
 
 cors = CORS(web_api)

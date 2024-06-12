@@ -44,10 +44,14 @@ def chat():
 @web_api.route('/predict-disease', methods=['GET'])
 def predict_disease():
 
+    if 'conversation_history' not in session:
+        session['conversation_history'] = CHAT_PROMPT
+
     crop_img =  request.json.get('path')
     user_input = request.json.get('message')
-    #TODO: Add another intent for diseases that are not for maize and then use the API from kindwise
-
+    
+    # uncomment the below line to test the model locally
+    # model_response = Predict.maize_disease_prediction(TEST_IMG)
     model_response = Predict.maize_disease_prediction(crop_img)
     print(model_response)
     refined_response = Chat.refine_response(user_input, model_response)
@@ -56,6 +60,9 @@ def predict_disease():
 
 @web_api.route('/predict-market', methods=['GET'])
 def predict_market():
+
+    if 'conversation_history' not in session:
+        session['conversation_history'] = CHAT_PROMPT
     
     user_data = {
         "area": request.json.get("area"),

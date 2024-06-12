@@ -1,12 +1,12 @@
-from datetime import timedelta
 from flask import Flask
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 import firebase_admin
 import os
 import openai
 from dotenv import load_dotenv
 from firebase_admin import credentials, storage, firestore, db
 import logging
+from newsapi import NewsApiClient
 
 web_api = Flask("src")
 web_api.secret_key = os.urandom(24)
@@ -26,6 +26,8 @@ AUTH_PROVIDER_CERT = os.getenv('AUTH_PROVIDER_CERT')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 HF_TOKEN = os.getenv('HF_TOKEN')
 WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')
+NEWS_API_KEY = os.getenv('NEWS_API_KEY')
+GNEWS_API_KEY = os.getenv('GNEWS_API_KEY')
 
 cred = credentials.Certificate({
   "type": "service_account",
@@ -49,4 +51,5 @@ database = firestore.client()
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 db_ref = db.reference('/device') #TODO: Replace with actual endpoint here
 
+newsapi = NewsApiClient(api_key=NEWS_API_KEY)
 from src.controllers import *

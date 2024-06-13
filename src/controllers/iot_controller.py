@@ -5,7 +5,23 @@ import atexit
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from src.models.chat import Chat
-from src import logging, web_api, database, db_ref, OPENAI_API_KEY
+from src import logging, web_api, database, db_ref, OPENAI_API_KEY, api, Resource, fields
+
+
+ns_soil_data = api.namespace('get-soil-data', description='Soil data from IoT device readings')
+ns_soil_analysis = api.namespace('soil-analysis', description='Soil Analysis from IoT device data')
+
+# Define the models for Swagger documentation
+soil_data_model = api.model('SoilData', {
+    'mois': fields.Float(required=True, description='Latest moisture data'),
+    'npk': fields.String(required=True, description='Latest NPK data'),
+    'temp': fields.Float(required=True, description='Latest temperature data'),
+    'ph': fields.Float(required=True, description='Latest pH data')
+})
+
+analysis_response_model = api.model('AnalysisResponse', {
+    'analysis': fields.String(description='Analysis of soil data')
+})
 
 # Store the accumulated data
 accumulated_data = {
@@ -111,35 +127,37 @@ scheduler.start()
 atexit.register(lambda: scheduler.shutdown())
 
 # API endponpk to fetch the latest accumulated data
-@web_api.route('/get-data', methods=['GET'])
-def get_data():
-    with data_lock:
-        mois_data = accumulated_data['mois'][-1] if accumulated_data['mois'] else None
-        npk_data = accumulated_data['npk'][-1] if accumulated_data['npk'] else None
-        temp_data = accumulated_data['temp'][-1] if accumulated_data['temp'] else None
-        ph_data = accumulated_data['ph'][-1] if accumulated_data['ph'] else None
-        return jsonify({
-            "mois": mois_data,
-            "npk": npk_data,
-            "temp": temp_data,
-            "ph": ph_data
-        })
+@ns_soil_data.route('/')
+class SoilDataResource(Resource):
+    @ns_soil_data.response(200, 'Success', [soil_data_model])
+    def get(self):
+        with data_lock:
+            mois_data = accumulated_data['mois'][-1] if accumulated_data['mois'] else None
+            npk_data = accumulated_data['npk'][-1] if accumulated_data['npk'] else None
+            temp_data = accumulated_data['temp'][-1] if accumulated_data['temp'] else None
+            ph_data = accumulated_data['ph'][-1] if accumulated_data['ph'] else None
+            return jsonify({
+                "mois": mois_data,
+                "npk": npk_data,
+                "temp": temp_data,
+                "ph": ph_data
+            })
     
-
-@web_api.route('/soil-analysis', methods=['GET'])
-def soil_analysis():
-    # Step 1: Call the /get-data endpoint to retrieve the latest accumulated data
-    get_data_response = requests.get(f'{request.url_root}/get-data')
-    
-    if get_data_response.status_code != 200:
-        return jsonify({"error": "Failed to retrieve data"}), 500
-    
-    data = get_data_response.json()
-    
-    analysis = Chat.soil_analysis(data)
-    
-    return jsonify({"analysis": analysis.strip()})
-
+@ns_soil_analysis.route('/')
+class SoilAnalysisResource(Resource):
+    @ns_soil_analysis.response(200, 'Success', [analysis_response_model])
+    def get(self):
+        # Step 1: Call the /get-data endpoint to retrieve the latest accumulated data
+        get_data_response = requests.get(f'{request.url_root}/get-soil-data')
+        
+        if get_data_response.status_code != 200:
+            return jsonify({"error": "Failed to retrieve data"}), 500
+        
+        data = get_data_response.json()
+        
+        analysis = Chat.soil_analysis(data)
+        
+        return jsonify({"analysis": analysis.strip()})
 
 # Serve the HTML file
 @web_api.route('/test')
@@ -156,3 +174,7 @@ def start_transfer():
         logging.info("Transfer started")
     except Exception as e:
         logging.error(f"Error in start_transfer: {e}")
+
+# Add the namespace to the API
+api.add_namespace(ns_soil_analysis, path='/soil-analysis')
+api.add_namespace(ns_soil_data, path='/soil-data')

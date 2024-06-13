@@ -53,7 +53,7 @@ class ChatResource(Resource):
         
         intent_response = Chat.get_intent_and_response(session['conversation_history'])
 
-        return jsonify({'message': intent_response})
+        return jsonify(intent_response)
 
 
 @ns_predict_disease.route('/')

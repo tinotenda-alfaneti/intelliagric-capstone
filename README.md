@@ -2,7 +2,7 @@
 
 ## How to test
 
-Request the environment variable and trained models - `ml_models` and `api keys`
+Request the environment variable and crops dataset - `ml_models` and `api keys`
 
 Place the folders inside the `models` directory
 

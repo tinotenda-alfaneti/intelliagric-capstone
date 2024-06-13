@@ -177,4 +177,4 @@ def start_transfer():
 
 # Add the namespace to the API
 api.add_namespace(ns_soil_analysis, path='/soil-analysis')
-api.add_namespace(ns_soil_data, path='/soil-data')
+api.add_namespace(ns_soil_data, path='/get-soil-data')

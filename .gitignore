@@ -8,3 +8,4 @@ ml_models
 .vercel
 flask_session
 .vercel
+venv

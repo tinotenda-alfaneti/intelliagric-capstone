@@ -7,6 +7,9 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from src.models.chat import Chat
 from src import logging, web_api, database, db_ref, OPENAI_API_KEY, api, Resource, fields
 
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+
 
 ns_soil_data = api.namespace('get-soil-data', description='Soil data from IoT device readings')
 ns_soil_analysis = api.namespace('soil-analysis', description='Soil Analysis from IoT device data')

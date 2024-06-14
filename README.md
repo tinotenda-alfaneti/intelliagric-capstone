@@ -11,3 +11,9 @@ Run `pip install -r requirements.txt` while in the root of the project (best opt
 Then run `flask --app app run`
 
 The web app will be open on http://127.0.0.1:5000
+
+
+## Running test
+
+`python -m unittest discover -s tests` 
+

@@ -28,9 +28,6 @@ web_api.secret_key = os.urandom(24)
 cors = CORS(web_api)
 web_api.config['CORS_HEADERS'] = 'Content-Type'
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-
 # initialize API documentation
 api = Api(web_api, version='1.0', title='IntelliAgric API', description='An Intelligent Farming Assistant API')
 

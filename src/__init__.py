@@ -7,7 +7,7 @@ from flask_cors import CORS
 from flask_restx import Api, Resource, fields
 
 import firebase_admin
-from firebase_admin import credentials, storage, firestore, db
+from firebase_admin import credentials, storage, firestore, db, auth
 
 import openai
 from dotenv import load_dotenv
@@ -28,8 +28,20 @@ web_api.secret_key = os.urandom(24)
 cors = CORS(web_api)
 web_api.config['CORS_HEADERS'] = 'Content-Type'
 
+authorizations = {
+    'Bearer Auth': {
+        'type': 'apiKey',
+        'in': 'header',
+        'name': 'Authorization'
+    }
+}
+
 # initialize API documentation
-api = Api(web_api, version='1.0', title='IntelliAgric API', description='An Intelligent Farming Assistant API')
+api = Api(web_api, version='1.0', 
+          title='IntelliAgric API', 
+          description='An Intelligent Farming Assistant API',
+          authorizations=authorizations,
+          security='Bearer Auth')
 
 # load private keys from dotenv
 load_dotenv('.env')

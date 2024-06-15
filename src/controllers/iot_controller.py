@@ -5,6 +5,7 @@ import atexit
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from src.models.chat import Chat
+from src.auth.auth import login_required
 from src import logging, web_api, database, db_ref, OPENAI_API_KEY, api, Resource, fields
 
 # Configure logging
@@ -132,7 +133,9 @@ atexit.register(lambda: scheduler.shutdown())
 # API endponpk to fetch the latest accumulated data
 @ns_soil_data.route('/')
 class SoilDataResource(Resource):
+    @login_required
     @ns_soil_data.response(200, 'Success', [soil_data_model])
+    @ns_soil_data.doc(security='Bearer Auth')
     def get(self):
         with data_lock:
             mois_data = accumulated_data['mois'][-1] if accumulated_data['mois'] else None
@@ -148,9 +151,11 @@ class SoilDataResource(Resource):
     
 @ns_soil_analysis.route('/')
 class SoilAnalysisResource(Resource):
+    @login_required
     @ns_soil_analysis.response(200, 'Success', [analysis_response_model])
+    @ns_soil_data.doc(security='Bearer Auth')
     def get(self):
-        # Step 1: Call the /get-data endpoint to retrieve the latest accumulated data
+        
         get_data_response = requests.get(f'{request.url_root}/get-soil-data')
         
         if get_data_response.status_code != 200:
@@ -164,6 +169,7 @@ class SoilAnalysisResource(Resource):
 
 # Serve the HTML file
 @web_api.route('/test')
+@login_required
 def test():
     return render_template('index.html.j2')
 

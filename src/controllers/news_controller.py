@@ -43,10 +43,11 @@ class AgricultureNewsResource(Resource):
                         "source": article["source"]["name"]
                     }
                     articles_data.append(article_info)
-                
-                return jsonify({"articles": articles_data})
+                response = jsonify({"articles": articles_data})
+                response.status_code = 200
+                return response
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+        
 
-# # Add the namespace to the API
-# api.add_namespace(ns_agriculture_news, path='/agriculture-news')
+api.add_namespace(ns_agriculture_news, path='/agriculture-news')

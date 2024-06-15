@@ -1,10 +1,11 @@
-from src import web_api, api, Resource, fields
-from flask import request, jsonify, session
+from src import ORIGIN_URL, web_api, api, Resource, fields, logging
+from flask import request, jsonify, session, make_response
 import os
 from src.models.chat import Chat
 from src.models.chat import CHAT_PROMPT
 from src.models.predictions import Predict
-
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
 # Define the namespaces
 ns_chat = api.namespace('chat', description='Chat operations')
 ns_predict_disease = api.namespace('predict-disease', description='Disease prediction operations')
@@ -54,16 +55,20 @@ class ChatResource(Resource):
         intent_response = Chat.get_intent_and_response(session['conversation_history'])
 
         return jsonify(intent_response)
+    
 
-    @ns_chat.route('/<path:path>', methods=['OPTIONS'])
-    def options(self, path=None):
-        """Handles the preflight requests."""
-        response = web_api.make_response()
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add("Access-Control-Allow-Headers", "Authorization, Content-Type")
-        response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-        return response
-
+# handle preflight requests for chat
+@web_api.route('/chat', methods=['OPTIONS'])
+def chat_options():
+    logging.info("Started the preflight handling")
+    response = make_response()
+    response.headers.add("Access-Control-Allow-Origin", ORIGIN_URL)
+    response.headers.add("Access-Control-Allow-Headers", "Authorization, Content-Type")
+    response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    response.status_code = 200
+    return response
+    
 @ns_predict_disease.route('/')
 class PredictDiseaseResource(Resource):
     @ns_predict_disease.expect(predict_disease_model)
@@ -102,3 +107,5 @@ class PredictMarketResource(Resource):
         refined_response = Chat.refine_response(user_input, market_response)
         session['conversation_history'].append({"role": "assistant", "content": refined_response})
         return jsonify({'intent': 'predict agriculture market', 'message': refined_response})
+    
+api.add_namespace(ns_chat, path='/chat')

@@ -22,11 +22,12 @@ web_api.config["SESSION_TYPE"] = "filesystem"
 web_api.config['PERMANENT_SESSION_LIFETIME'] =  timedelta(minutes=45)
 Session(web_api)
 
+ORIGIN_URL = "http://localhost:3000" #TODO: Replace with the deployed version
+
 # secre key
 web_api.secret_key = os.urandom(24)
 
-cors = CORS(web_api, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
-web_api.config['CORS_HEADERS'] = 'Content-Type'
+CORS(web_api, supports_credentials=True, resources={r"/*": {"origins": ORIGIN_URL}})
 
 authorizations = {
     'Bearer Auth': {

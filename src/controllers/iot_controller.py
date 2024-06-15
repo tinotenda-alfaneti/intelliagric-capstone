@@ -193,6 +193,3 @@ def start_transfer():
     except Exception as e:
         logging.error(f"Error in start_transfer: {e}")
 
-# Add the namespace to the API
-api.add_namespace(ns_soil_analysis, path='/soil-analysis')
-api.add_namespace(ns_soil_data, path='/get-soil-data')

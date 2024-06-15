@@ -46,8 +46,5 @@ class LogoutResource(Resource):
         response.status_code = 200
         return response
 
-# Add the namespace to the API
-api.add_namespace(ns_auth, path='/login')
-api.add_namespace(ns_auth, path='/logout')
     
     

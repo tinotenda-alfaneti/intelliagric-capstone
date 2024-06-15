@@ -25,7 +25,7 @@ Session(web_api)
 # secre key
 web_api.secret_key = os.urandom(24)
 
-cors = CORS(web_api)
+cors = CORS(web_api, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 web_api.config['CORS_HEADERS'] = 'Content-Type'
 
 authorizations = {

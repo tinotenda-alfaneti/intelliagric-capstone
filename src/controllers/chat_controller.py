@@ -55,6 +55,14 @@ class ChatResource(Resource):
 
         return jsonify(intent_response)
 
+    @ns_chat.route('/<path:path>', methods=['OPTIONS'])
+    def options(self, path=None):
+        """Handles the preflight requests."""
+        response = web_api.make_response()
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Authorization, Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        return response
 
 @ns_predict_disease.route('/')
 class PredictDiseaseResource(Resource):

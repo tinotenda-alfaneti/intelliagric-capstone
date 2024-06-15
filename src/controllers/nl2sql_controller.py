@@ -61,6 +61,3 @@ class EcommerceQueryResource(Resource):
         result = execute_query.invoke(query)
         response = rephrase_answer.invoke({"question": message, "query": query, "result": result})
         return jsonify({"response": response})
-
-# Add the namespace to the API
-api.add_namespace(ns_query_ecommerce, path='/query-ecommerce')

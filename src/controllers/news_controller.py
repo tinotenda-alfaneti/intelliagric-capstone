@@ -48,5 +48,5 @@ class AgricultureNewsResource(Resource):
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
-# Add the namespace to the API
-api.add_namespace(ns_agriculture_news, path='/agriculture-news')
+# # Add the namespace to the API
+# api.add_namespace(ns_agriculture_news, path='/agriculture-news')

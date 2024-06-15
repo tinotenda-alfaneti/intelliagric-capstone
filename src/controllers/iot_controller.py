@@ -1,4 +1,4 @@
-from flask import jsonify, render_template, request
+from flask import jsonify, render_template, request, session
 import threading
 from datetime import datetime
 import atexit
@@ -6,12 +6,13 @@ import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from src.models.chat import Chat
 from src.auth.auth import login_required
-from src import logging, web_api, database, db_ref, OPENAI_API_KEY, api, Resource, fields
+from src import logging, web_api, database, db, OPENAI_API_KEY, api, Resource, fields
+
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-
+user_token = None
 ns_soil_data = api.namespace('get-soil-data', description='Soil data from IoT device readings')
 ns_soil_analysis = api.namespace('soil-analysis', description='Soil Analysis from IoT device data')
 
@@ -64,24 +65,28 @@ def transfer_data(event):
 # Function to watch the Realtime Database
 def watch_realtime_db():
     try:
+
+        if user_token != None:
+            initial_data = db.reference(user_token).get()
+            logging.debug(f"Initial data: {initial_data}")
+            if initial_data:
+                if 'mois' in initial_data and initial_data['mois'] is not None:
+                    accumulated_data['mois'].append(initial_data['mois'])
+                    logging.debug(f"Initial accumulated moisture data: {accumulated_data['mois']}")
+                if 'npk' in initial_data and initial_data['npk'] is not None:
+                    accumulated_data['npk'].append(initial_data['npk'])
+                    logging.debug(f"Initial accumulated npk data: {accumulated_data['npk']}")
+                if 'temp' in initial_data and initial_data['temp'] is not None:
+                    accumulated_data['temp'].append(initial_data['temp'])
+                    logging.debug(f"Initial accumulated temp data: {accumulated_data['temp']}")
+                if 'ph' in initial_data and initial_data['ph'] is not None:
+                    accumulated_data['ph'].append(initial_data['ph'])
+                    logging.debug(f"Initial accumulated pH data: {accumulated_data['ph']}")
+            db.reference(user_token).listen(transfer_data)
+            logging.info("Started listening to Realtime Database")
+        else:
+            raise ValueError('User not logged in')
         
-        initial_data = db_ref.get()
-        logging.debug(f"Initial data: {initial_data}")
-        if initial_data:
-            if 'mois' in initial_data and initial_data['mois'] is not None:
-                accumulated_data['mois'].append(initial_data['mois'])
-                logging.debug(f"Initial accumulated moisture data: {accumulated_data['mois']}")
-            if 'npk' in initial_data and initial_data['npk'] is not None:
-                accumulated_data['npk'].append(initial_data['npk'])
-                logging.debug(f"Initial accumulated npk data: {accumulated_data['npk']}")
-            if 'temp' in initial_data and initial_data['temp'] is not None:
-                accumulated_data['temp'].append(initial_data['temp'])
-                logging.debug(f"Initial accumulated temp data: {accumulated_data['temp']}")
-            if 'ph' in initial_data and initial_data['ph'] is not None:
-                accumulated_data['ph'].append(initial_data['ph'])
-                logging.debug(f"Initial accumulated pH data: {accumulated_data['ph']}")
-        db_ref.listen(transfer_data)
-        logging.info("Started listening to Realtime Database")
     except Exception as e:
         logging.error(f"Error in watch_realtime_db: {e}")
 
@@ -109,7 +114,7 @@ def save_daily_average():
                 logging.info(f"Saved pH average: {avg_ph}")
             if avg_data:
                 avg_data['timestamp'] = datetime.now()
-                database.collection('daily_averages').add(avg_data)
+                database.collection(f'daily_averages-{user_token}').add(avg_data)
                 logging.debug("Saved daily averages")
             # Clear the accumulated data for the next day
             accumulated_data['mois'].clear()
@@ -177,6 +182,10 @@ def test():
 @web_api.before_first_request
 def start_transfer():
     try:
+        global user_token  
+        session["auth_token"] = "this3is4a5dummya6uthtoken" #TODO: Replace with the actual token during loggin in
+        session.permanent = True
+        user_token = session["auth_token"]
         transfer_thread = threading.Thread(target=watch_realtime_db)
         transfer_thread.daemon = True
         transfer_thread.start()

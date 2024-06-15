@@ -75,8 +75,6 @@ cred = credentials.Certificate({
 firebase_admin.initialize_app(credential=cred, options={'storageBucket': 'intelliagric-c1df6.appspot.com', 'databaseURL': 'https://intelliagric-c1df6-default-rtdb.firebaseio.com'})
 bucket = storage.bucket()
 database = firestore.client()
-db_ref = db.reference('/device') #TODO: Replace with actual endpoint here, this is going to be the device ID
-
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 newsapi = NewsApiClient(api_key=NEWS_API_KEY)
 from src.controllers import *

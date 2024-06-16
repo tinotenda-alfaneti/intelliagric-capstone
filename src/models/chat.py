@@ -1,5 +1,5 @@
 from src import client
-from src.models.utils import SYS_MESSAGE
+from src.models.utils import INITIAL_STAGE_PROMPT
 
 REFINING_PROMPT = """
             You are an assistant named IntelliAgric for an African agriculture farmer. A user has asked a question, and a specialized model for either maize disease prediction or agriculture market prediction has provided the following data. Your task is to analyze and refine the response to be clear and helpful, provide recommendations, and ensure it fits naturally into the ongoing conversation. Your responses should be geared towards Africa and easy to understand. Break down all complex ideas and concepts. The responses should not just be informative but also include recommendations and practical solutions.
@@ -29,7 +29,7 @@ REFINING_PROMPT = """
 CHAT_PROMPT = [
             {
                 "role": "system",
-                "content": SYS_MESSAGE
+                "content": INITIAL_STAGE_PROMPT
             }
         ]
 

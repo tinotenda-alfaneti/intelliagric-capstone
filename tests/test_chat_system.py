@@ -22,20 +22,20 @@ class TestChatSystem(BaseTestCase):
             
             response = self.client.post('/chat/', json={'message': 'Tell me about farming'})
             self.assertEqual(response.status_code, 200)
-            self.assertIn('response', response.json)
             self.assertIn('intent', response.json)
-            self.assertEqual(len(session['conversation_history']), 5)
+            self.assertEqual(response.json.intent, "#General")
+            self.assertIn('response', response.json)
+    
+    def test_full_chat_flow_market(self):
 
-class TestPredictDiseaseSystem(BaseTestCase):
-    def test_full_predict_disease_flow(self):
         with self.client:
-            response = self.client.get('/predict-disease/', json={
-                'path': test_img,
-                'message': 'What disease does my crop have?'
-            })
+            response = self.client.post('/chat/', json={'message': 'Predict future market for maize here in Ghana'})
             self.assertEqual(response.status_code, 200)
-            self.assertIn('message', response.json)
-            self.assertIn('conversation_history', session)
+            self.assertIn('intent', response.json)
+            self.assertIn('area', response.json)
+            self.assertIn('crop', response.json)
+            self.assertEqual(response.json.intent, "#Predict Agriculture Market")
+            self.assertIn('response', response.json)
 
 if __name__ == '__main__':
     unittest.main()

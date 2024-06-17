@@ -1,18 +1,21 @@
 
-from src import auth, logging
+from src import logging
+from firebase_admin import auth
 from functools import wraps
 from flask import request, jsonify
 
 # Initialize logging
 logging.basicConfig(level=logging.DEBUG)
 
-def verify_id_token(id_token):
+#TODO: Put back the token
+
+def verify_id_token(uid):
     try:
-        decoded_token = auth.verify_id_token(id_token)
-        logging.info(f"The decoded token is: {decoded_token}")
-        return decoded_token
-    except Exception as e:
-        logging.error(f"Token verification failed: {e}")
+        user = auth.get_user(uid)
+        logging.info(f"Verification for {user} successful")
+        return user
+    except auth.AuthError as e:
+        logging.error(f"Verification failed {e}")
         return None
 
 def login_required(f):

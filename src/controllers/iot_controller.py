@@ -1,4 +1,4 @@
-from flask import jsonify, render_template, request, session
+from flask import jsonify, render_template, request
 import threading
 from datetime import datetime
 import atexit
@@ -6,13 +6,14 @@ import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from src.models.chat import Chat
 from src.auth.auth import login_required
-from src import logging, web_api, database, db, OPENAI_API_KEY, api, Resource, fields
+from src import logging, web_api, database, db, api, Resource, fields
 
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-user_token = None
+user_token = web_api.config["AUTH_TOKEN"]
+
 ns_soil_data = api.namespace('get-soil-data', description='Soil data from IoT device readings')
 ns_soil_analysis = api.namespace('soil-analysis', description='Soil Analysis from IoT device data')
 
@@ -21,9 +22,9 @@ soil_data_model = api.model('SoilData', {
     'mois': fields.Float(required=True, description='Latest moisture data'),
     'npk': fields.String(required=True, description='Latest NPK data'),
     'temp': fields.Float(required=True, description='Latest temperature data'),
-    'ph': fields.Float(required=True, description='Latest pH data')
-})
-
+    'ph': fields.Float(required=True, description='Latest pH data'),
+    'serialnum': fields.Float(required=True, description='Latest pH data')
+}) 
 analysis_response_model = api.model('AnalysisResponse', {
     'analysis': fields.String(description='Analysis of soil data')
 })
@@ -65,27 +66,24 @@ def transfer_data(event):
 # Function to watch the Realtime Database
 def watch_realtime_db():
     try:
-
-        if user_token != None:
-            initial_data = db.reference(user_token).get()
-            logging.debug(f"Initial data: {initial_data}")
-            if initial_data:
-                if 'mois' in initial_data and initial_data['mois'] is not None:
-                    accumulated_data['mois'].append(initial_data['mois'])
-                    logging.debug(f"Initial accumulated moisture data: {accumulated_data['mois']}")
-                if 'npk' in initial_data and initial_data['npk'] is not None:
-                    accumulated_data['npk'].append(initial_data['npk'])
-                    logging.debug(f"Initial accumulated npk data: {accumulated_data['npk']}")
-                if 'temp' in initial_data and initial_data['temp'] is not None:
-                    accumulated_data['temp'].append(initial_data['temp'])
-                    logging.debug(f"Initial accumulated temp data: {accumulated_data['temp']}")
-                if 'ph' in initial_data and initial_data['ph'] is not None:
-                    accumulated_data['ph'].append(initial_data['ph'])
-                    logging.debug(f"Initial accumulated pH data: {accumulated_data['ph']}")
-            db.reference(user_token).listen(transfer_data)
-            logging.info("Started listening to Realtime Database")
-        else:
-            raise ValueError('User not logged in')
+        user_token = web_api.config["AUTH_TOKEN"]
+        initial_data = db.reference(f'iot/{user_token}').get()
+        logging.debug(f"Initial data: {initial_data}")
+        if initial_data:
+            if 'mois' in initial_data and initial_data['mois'] is not None:
+                accumulated_data['mois'].append(initial_data['mois'])
+                logging.debug(f"Initial accumulated moisture data: {accumulated_data['mois']}")
+            if 'npk' in initial_data and initial_data['npk'] is not None:
+                accumulated_data['npk'].append(initial_data['npk'])
+                logging.debug(f"Initial accumulated npk data: {accumulated_data['npk']}")
+            if 'temp' in initial_data and initial_data['temp'] is not None:
+                accumulated_data['temp'].append(initial_data['temp'])
+                logging.debug(f"Initial accumulated temp data: {accumulated_data['temp']}")
+            if 'ph' in initial_data and initial_data['ph'] is not None:
+                accumulated_data['ph'].append(initial_data['ph'])
+                logging.debug(f"Initial accumulated pH data: {accumulated_data['ph']}")
+        db.reference(f'iot/{user_token}').listen(transfer_data)
+        logging.info("Started listening to Realtime Database")
         
     except Exception as e:
         logging.error(f"Error in watch_realtime_db: {e}")
@@ -127,13 +125,10 @@ def save_daily_average():
 
 # Schedule the save_daily_average function to run at midnight
 scheduler = BackgroundScheduler()
-scheduler.add_job(func=save_daily_average, trigger='cron', hour=0, minute=0)
-# uncomment for testing
-# scheduler.add_job(func=save_daily_average, trigger='interval', seconds=60)
-scheduler.start()
 
-# Ensure the scheduler shuts down when the app exits
-atexit.register(lambda: scheduler.shutdown())
+if scheduler.running:
+    # Ensure the scheduler shuts down when the app exits
+    atexit.register(lambda: scheduler.shutdown())
 
 # API endponpk to fetch the latest accumulated data
 @ns_soil_data.route('/')
@@ -178,14 +173,9 @@ class SoilAnalysisResource(Resource):
 def test():
     return render_template('index.html.j2')
 
-# Start watching the database as soon as the app starts
-@web_api.before_first_request
+# Start watching the database as soon as log in is successful
 def start_transfer():
     try:
-        global user_token  
-        session["auth_token"] = "this3is4a5dummya6uthtoken" #TODO: Replace with the actual token during loggin in
-        session.permanent = True
-        user_token = session["auth_token"]
         transfer_thread = threading.Thread(target=watch_realtime_db)
         transfer_thread.daemon = True
         transfer_thread.start()

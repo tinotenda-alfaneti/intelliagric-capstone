@@ -13,6 +13,7 @@ import openai
 from dotenv import load_dotenv
 import logging
 from newsapi import NewsApiClient
+from src.Config.config import Config
 
 web_api = Flask("src")
 
@@ -20,6 +21,9 @@ web_api = Flask("src")
 web_api.config["SESSION_PERMANENT"] = False
 web_api.config["SESSION_TYPE"] = "filesystem"
 web_api.config['PERMANENT_SESSION_LIFETIME'] =  timedelta(minutes=45)
+
+web_api.config.from_object(Config)
+
 Session(web_api)
 
 ORIGIN_URL = "http://localhost:3000" #TODO: Replace with the deployed version

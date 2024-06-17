@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request, jsonify, make_response
 from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_openai import ChatOpenAI
 from langchain.chains import create_sql_query_chain
@@ -6,7 +6,7 @@ from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-from src import OPENAI_API_KEY, api, Resource, fields, logging, web_api
+from src import ORIGIN_URL, OPENAI_API_KEY, api, Resource, fields, logging, web_api
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -67,5 +67,17 @@ class EcommerceQueryResource(Resource):
         result = execute_query.invoke(query)
         response = rephrase_answer.invoke({"question": message, "query": query, "result": result})
         return jsonify({"response": response})
+
+# handle preflight requests for query ecommerce endpoint
+@web_api.route('/query-ecommerce', methods=['OPTIONS'])
+def chat_options():
+    logging.info("Started the preflight handling")
+    response = make_response()
+    response.headers.add("Access-Control-Allow-Origin", ORIGIN_URL)
+    response.headers.add("Access-Control-Allow-Headers", "Authorization, Content-Type")
+    response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    response.status_code = 200
+    return response
 
 api.add_namespace(ns_query_ecommerce, path='/query-ecommerce')

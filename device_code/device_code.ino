@@ -3,38 +3,40 @@
 #include <Firebase_ESP_Client.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <ArduinoJson.h>
+#include <Preferences.h>
 
-//Provide the token generation process info.
+// Provide the token generation process info.
 #include "addons/TokenHelper.h"
-//Provide the RTDB payload printing info and other helper functions.
+// Provide the RTDB payload printing info and other helper functions.
 #include "addons/RTDBHelper.h"
 
-#include "config.h"
-// Insert your network credentials
+#include "config.h" // Contains WIFI_SSID, WIFI_PASSWORD, API_KEY, DATABASE_URL, and PROJECT_ID
 
 #define MOIS_PIN 34 // ESP32 pin GPIO34 (ADC0) that connects to AOUT pin of moisture sensor
 #define TEMP_PIN  17
 
-//Define Firebase Data object
+// Define Firebase Data object
 FirebaseData fbdo;
 
 FirebaseAuth auth;
 FirebaseConfig config;
 
+String farmerId;
+
 unsigned long sendDataPrevMillis = 0;
 bool signupOK = false;
-
+Preferences preferences;
 float t;
 
 OneWire oneWire(TEMP_PIN);
 DallasTemperature DS18B20(&oneWire);
- 
 
 void setup(){
   Serial.begin(115200);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   DS18B20.begin();
-  
+
   Serial.print("Connecting to Wi-Fi");
   while (WiFi.status() != WL_CONNECTED){
     Serial.print(".");
@@ -45,72 +47,105 @@ void setup(){
   Serial.println(WiFi.localIP());
   Serial.println();
 
-  /* Assign the api key (required) */
+  // Assign the api key (required)
   config.api_key = API_KEY;
 
-  /* Assign the RTDB URL (required) */
+  // Assign the RTDB URL (required)
   config.database_url = DATABASE_URL;
 
-  /* Sign up */
-  if (Firebase.signUp(&config, &auth, "", "")){
-    Serial.println("ok");
-    signupOK = true;
-  }
-  else{
-    Serial.printf("%s\n", config.signer.signupError.message.c_str());
-  }
+  auth.user.email = USER_EMAIL;
+  auth.user.password = USER_PASSWORD;
 
-  /* Assign the callback function for the long running token generation task */
-  config.token_status_callback = tokenStatusCallback; //see addons/TokenHelper.h
-  
+  // Assign the callback function for the long running token generation task
+  config.token_status_callback = tokenStatusCallback; // see addons/TokenHelper.h
+
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
+
+  if (Firebase.authenticated() == true) {
+    signupOK = true;
+    }
+
+  preferences.begin("config", false); // Open preferences with "config" namespace, RW access
+  // Load saved values or defaults if not yet saved
+  farmerId = preferences.getString("farmerId", "");
+  if (farmerId == "") {
+    farmerId = getFarmerId(SERIAL_NUM);
+    preferences.putString("farmerId", farmerId);
+    }
+  if (farmerId != "") {
+    Serial.print("Farmer ID: ");
+    Serial.println(farmerId);
+  } else {
+    Serial.println("Failed to get farmer ID");
+  }
 }
 
 void loop() {
-  
-  // put your main code here, to run repeatedly:
-  if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 15000 || sendDataPrevMillis == 0)){
+
+  // Put your main code here, to run repeatedly
+  if (Firebase.ready() && (millis() - sendDataPrevMillis > 15000 || sendDataPrevMillis == 0)){
     sendDataPrevMillis = millis();
-    DS18B20.requestTemperatures();       // send the command to get temperatures
-    t = DS18B20.getTempCByIndex(0);  // read temperature in °C
-    int m = analogRead(MOIS_PIN); // moisture sensor
-    float pH = 7; // soil pH
-    String npk = "7-14-7"; // soil NPK
-    
-    // Write NPK on the database path device/npk
-    if (Firebase.RTDB.setString(&fbdo, "device/npk", npk)){
+    DS18B20.requestTemperatures();       // Send the command to get temperatures
+    t = DS18B20.getTempCByIndex(0);  // Read temperature in °C
+    int m = analogRead(MOIS_PIN); // Moisture sensor
+    float pH = 7; // dummy Soil pH
+    String npk = "7-14-7"; // dummy Soil NPK
+
+    String basePath = "iot/" + farmerId;
+
+    // Write NPK to the database path device/npk
+    if (Firebase.RTDB.setString(&fbdo, basePath + "/npk", npk)){
       Serial.println("PASSED");
-    }
-    else {
+    } else {
       Serial.println("FAILED");
       Serial.println("REASON: " + fbdo.errorReason());
     }
-    
-    // Write temperature on the database path device/temp
-    if (Firebase.RTDB.setFloat(&fbdo, "device/temp", t)){
+
+    // Write temperature to the database path device/temp
+    if (Firebase.RTDB.setFloat(&fbdo, basePath + "/temp", t)){
       Serial.println("PASSED");
-    }
-    else {
+    } else {
       Serial.println("FAILED");
       Serial.println("REASON: " + fbdo.errorReason());
     }
-     // Write soil moisture on the database path device/mois
-    if (Firebase.RTDB.setInt(&fbdo, "device/mois", m)){
+
+    // Write soil moisture to the database path device/mois
+    if (Firebase.RTDB.setInt(&fbdo, basePath + "/mois", m)){
       Serial.println("PASSED");
-    }
-    else {
+    } else {
       Serial.println("FAILED");
       Serial.println("REASON: " + fbdo.errorReason());
     }
-    // Write soil pH on the database path device/ph
-    if (Firebase.RTDB.setInt(&fbdo, "device/ph", pH)){
+
+    // Write soil pH to the database path device/ph
+    if (Firebase.RTDB.setInt(&fbdo, basePath + "/ph", pH)){
       Serial.println("PASSED");
-    }
-    else {
+    } else {
       Serial.println("FAILED");
       Serial.println("REASON: " + fbdo.errorReason());
     }
   }
+}
 
+String getFarmerId(const char* serialNumber) {
+  // Define the document path in Firestore
+  String documentPath = "iot_devices/" + String(SERIAL_NUM);
+
+  // Fetch the document
+  if (Firebase.Firestore.getDocument(&fbdo, PROJECT_ID, "", documentPath.c_str())) {
+    if (fbdo.httpCode() == 200) {
+      // Parse the JSON response
+      DynamicJsonDocument doc(1024);
+      deserializeJson(doc, fbdo.payload());
+      JsonObject fields = doc["fields"];
+      String farmerId = fields["farmer_id"]["stringValue"].as<String>();
+      return farmerId;
+    } else {
+      Serial.printf("Error getting document: %s\n", fbdo.errorReason().c_str());
+    }
+  } else {
+    Serial.printf("Failed to get document: %s\n", fbdo.errorReason().c_str());
+  }
+  return "";
 }

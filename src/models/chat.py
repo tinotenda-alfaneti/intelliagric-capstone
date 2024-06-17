@@ -1,5 +1,6 @@
-from src import client
+from src import client, database, web_api
 from src.models.utils import INITIAL_STAGE_PROMPT
+import json
 
 REFINING_PROMPT = """
             You are an assistant named IntelliAgric for an African agriculture farmer. A user has asked a question, and a specialized model for either maize disease prediction or agriculture market prediction has provided the following data. Your task is to analyze and refine the response to be clear and helpful, provide recommendations, and ensure it fits naturally into the ongoing conversation. Your responses should be geared towards Africa and easy to understand. Break down all complex ideas and concepts. The responses should not just be informative but also include recommendations and practical solutions.
@@ -109,3 +110,17 @@ class Chat:
             max_tokens=MAX_TOKENS
         )
         return response.choices[0].message.content
+    
+    @staticmethod
+    def save_chat(message):
+
+        try:
+            db = database.collection(f'history-{web_api.config["AUTH_TOKEN"]}')
+
+            db.add(message)
+
+            print(f'Document added with ID: {db[1].id}')
+        
+            return json.dumps({"Success":"Data Added Successfully"})
+        except:
+            return json.dumps({"error":"Please Enter Valid Data"}, default=TypeError)

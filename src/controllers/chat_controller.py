@@ -4,6 +4,7 @@ import os
 from src.models.chat import Chat
 from src.models.chat import CHAT_PROMPT
 from src.models.predictions import Predict
+from src.auth.auth import login_required
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -16,6 +17,12 @@ HISTORY_LIMIT = 10
 # Define the models for Swagger documentation
 message_model = api.model('Message', {
     'message': fields.String(required=True, description='User input message')
+})
+
+single_message_model = api.model('SingleMessage', {
+    'role': fields.String(required=True, description='Whether the message is from User or Assistant'),
+    'content': fields.String(required=True, description='The message'),
+    'timestamp': fields.DateTime(required=True, description='The date and time the message was sent')
 })
 
 TEST_IMG = os.path.dirname(__file__) + "/uploads/example.jpg"
@@ -48,7 +55,22 @@ class ChatResource(Resource):
         session['conversation_history'].append({"role": "assistant", "content": intent_response})
 
         return jsonify({"response": intent_response, "chat_history": session['conversation_history']})
-    
+
+@ns_chat.route('/save')
+class ChatResource(Resource):
+    @login_required
+    @ns_chat.expect(single_message_model)
+    @ns_chat.response(200, 'Success')
+    def post(self):
+        """Saves chat messages from the user and assistant."""
+        user_input = request.json
+
+        add_response = Chat.save_chat(user_input)
+
+        if "error" in add_response:
+            return jsonify({"error" : "Message not saved"})
+
+        return jsonify({"success" : "Message saved successfully"})  
 
 # handle preflight requests for chat
 @web_api.route('/chat', methods=['OPTIONS'])
@@ -63,3 +85,4 @@ def chat_options():
     return response
     
 api.add_namespace(ns_chat, path='/chat')
+api.add_namespace(ns_chat, path='/chat/save')

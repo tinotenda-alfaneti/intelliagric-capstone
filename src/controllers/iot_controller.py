@@ -125,6 +125,7 @@ def save_daily_average():
 
 # Schedule the save_daily_average function to run at midnight
 scheduler = BackgroundScheduler()
+#TODO: Verify if this is for a single user or throughout the app
 
 if scheduler.running:
     # Ensure the scheduler shuts down when the app exits

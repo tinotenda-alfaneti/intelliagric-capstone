@@ -14,7 +14,7 @@ def verify_id_token(uid):
         user = auth.get_user(uid)
         logging.info(f"Verification for {user} successful")
         return user
-    except auth.AuthError as e:
+    except Exception as e:
         logging.error(f"Verification failed {e}")
         return None
 

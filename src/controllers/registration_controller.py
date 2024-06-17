@@ -14,6 +14,7 @@ farm_model = api.model('Farm', {
     'farmName': fields.String(required=True, description='Farm Name'),
     'landSize': fields.String(required=True, description='Land Size'),
     'farmingType': fields.String(required=True, description='Farming Type'),
+    'contact': fields.String(required=True, description='Contact'),
 })
 
 @ns_farm.route('/')
@@ -28,6 +29,7 @@ class RegisterFarm(Resource):
         iot_device_serial = data.get('iotDeviceSerial')
         drone_serial = data.get('droneSerial')
         country = data.get('country')
+        contact = data.get('contact')
         farm_name = data.get('farmName')
         land_size = data.get('landSize')
         farming_type = data.get('farmingType')
@@ -49,7 +51,8 @@ class RegisterFarm(Resource):
                 'country': country,
                 'farm_name': farm_name,
                 'land_size': land_size,
-                'farming_type': farming_type
+                'farming_type': farming_type,
+                'contact': contact
             }
             database.collection('farms').add(farm_data)
 

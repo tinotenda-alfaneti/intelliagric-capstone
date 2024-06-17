@@ -6,33 +6,39 @@ from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-from src import OPENAI_API_KEY, api, Resource, fields
+from src import OPENAI_API_KEY, api, Resource, fields, logging, web_api
 
-#TODO: Replace with actual Database credentials for the ecommerce
-db_user = "root"
-db_password = ""
-db_host = "localhost"
-db_name = "shoppn"
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+
+db_user = web_api.config["DB_USER"]
+db_password = web_api.config["DB_PASSWORD"]
+db_host = web_api.config["DB_HOST"]
+db_name = web_api.config["DB_NAME"]
 MODEL = "gpt-3.5-turbo"
 
-# Connect to SQL Database
-db = SQLDatabase.from_uri(f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}")
+try:
+    # Connect to SQL Database
+    db = SQLDatabase.from_uri(f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}")
 
-llm = ChatOpenAI(model=MODEL, temperature=0, openai_api_key=OPENAI_API_KEY)
-generate_query = create_sql_query_chain(llm, db)
+    llm = ChatOpenAI(model=MODEL, temperature=0, openai_api_key=OPENAI_API_KEY)
+    generate_query = create_sql_query_chain(llm, db)
 
-# Define the final prompt template
-final_prompt = PromptTemplate.from_template(
-    """Given the following user question, corresponding SQL query, and SQL result, answer the user question.
-    Question: {question}
-    SQL Query: {query}
-    SQL Result: {result}
-    Answer: """
-)
+    # Define the final prompt template
+    final_prompt = PromptTemplate.from_template(
+        """Given the following user question, corresponding SQL query, and SQL result, answer the user question.
+        Question: {question}
+        SQL Query: {query}
+        SQL Result: {result}
+        Answer: """
+    )
 
-# Define the chain for NL2SQL execution
-rephrase_answer = final_prompt | llm | StrOutputParser()
-execute_query = QuerySQLDataBaseTool(db=db)
+    # Define the chain for NL2SQL execution
+    rephrase_answer = final_prompt | llm | StrOutputParser()
+    execute_query = QuerySQLDataBaseTool(db=db)
+except Exception as e:
+    logging.error(f"Error loading SQL Database - {e}")
+
 
 ns_query_ecommerce = api.namespace('query-ecommerce', description='Natural Language ecommerce query operations')
 
@@ -61,3 +67,5 @@ class EcommerceQueryResource(Resource):
         result = execute_query.invoke(query)
         response = rephrase_answer.invoke({"question": message, "query": query, "result": result})
         return jsonify({"response": response})
+
+api.add_namespace(ns_query_ecommerce, path='/query-ecommerce')

@@ -68,16 +68,4 @@ class EcommerceQueryResource(Resource):
         response = rephrase_answer.invoke({"question": message, "query": query, "result": result})
         return jsonify({"response": response})
 
-# handle preflight requests for query ecommerce endpoint
-@web_api.route('/query-ecommerce', methods=['OPTIONS'])
-def ecom_options():
-    logging.info("Started the preflight handling")
-    response = make_response()
-    response.headers.add("Access-Control-Allow-Origin", ORIGIN_URL)
-    response.headers.add("Access-Control-Allow-Headers", "Authorization, Content-Type")
-    response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
-    response.headers.add("Access-Control-Allow-Credentials", "true")
-    response.status_code = 200
-    return response
-
 api.add_namespace(ns_query_ecommerce, path='/query-ecommerce')

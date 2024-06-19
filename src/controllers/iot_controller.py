@@ -8,10 +8,6 @@ from src.models.chat import Chat
 from src.auth.auth import login_required
 from src import logging, web_api, database, db, api, Resource, fields
 
-
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-
 user_token = web_api.config["AUTH_TOKEN"]
 
 ns_soil_data = api.namespace('get-soil-data', description='Soil data from IoT device readings')
@@ -183,4 +179,3 @@ def start_transfer():
         logging.info("Transfer started")
     except Exception as e:
         logging.error(f"Error in start_transfer: {e}")
-

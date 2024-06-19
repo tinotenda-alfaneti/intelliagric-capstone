@@ -15,6 +15,9 @@ import logging
 from newsapi import NewsApiClient
 from src.Config.config import Config
 
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+
 web_api = Flask("src")
 
 # Session Configuration

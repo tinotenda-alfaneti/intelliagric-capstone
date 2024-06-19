@@ -1,11 +1,14 @@
-from src import web_api, api, fields, Resource
+from src import ORIGIN_URL, web_api, api, fields, Resource
 import json
 import numpy as np
-from flask import request, session, jsonify
+import logging
+from flask import request, session, jsonify, make_response
 from src.models.predictions import Predict
 from src.models.chat import CHAT_PROMPT
 from src.models.chat import Chat
 
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
 
 ns_predict_disease = api.namespace('predict-disease', description='Disease prediction operations')
 ns_predict_market = api.namespace('predict-market', description='Market prediction operations')
@@ -26,7 +29,7 @@ predict_market_model = api.model('PredictMarket', {
 class PredictDiseaseResource(Resource):
     @ns_predict_disease.expect(predict_disease_model)
     @ns_predict_disease.response(200, 'Success')
-    def get(self):
+    def post(self):
         """Predicts diseases based on the provided crop image."""
         if 'conversation_history' not in session:
             session['conversation_history'] = CHAT_PROMPT
@@ -48,14 +51,14 @@ class PredictDiseaseResource(Resource):
 class PredictMarketResource(Resource):
     @ns_predict_market.expect(predict_market_model)
     @ns_predict_market.response(200, 'Success')
-    def get(self):
+    def post(self):
         """Predicts the market conditions based on user data."""
         if 'conversation_history' not in session:
             session['conversation_history'] = CHAT_PROMPT
         
         user_data = {
-            "area": request.json.get("area"),
-            "item": request.json.get("item")
+            "area": request.json.get("area").capitalize(),
+            "item": request.json.get("crop").capitalize()
         }
         user_input = request.json.get("message")
         
@@ -66,6 +69,18 @@ class PredictMarketResource(Resource):
         session['conversation_history'].append({"role": "assistant", "content": refined_response})
         final_response = {'intent': 'predict agriculture market', 'message': refined_response}
         return jsonify({'response': final_response, 'chat_history': session['conversation_history']})
+    
+# handle preflight requests for chat
+@web_api.route('/predict-market', methods=['OPTIONS'])
+def predict_market_options():
+    logging.info("Started the preflight handling")
+    response = make_response()
+    response.headers.add("Access-Control-Allow-Origin", ORIGIN_URL)
+    response.headers.add("Access-Control-Allow-Headers", "Authorization, Content-Type")
+    response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    response.status_code = 200
+    return response
 
 api.add_namespace(ns_predict_disease, path='/predict-disease')
 api.add_namespace(ns_predict_market, path='/predict-market')  

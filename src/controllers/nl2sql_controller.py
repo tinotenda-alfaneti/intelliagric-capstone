@@ -70,7 +70,7 @@ class EcommerceQueryResource(Resource):
 
 # handle preflight requests for query ecommerce endpoint
 @web_api.route('/query-ecommerce', methods=['OPTIONS'])
-def chat_options():
+def ecom_options():
     logging.info("Started the preflight handling")
     response = make_response()
     response.headers.add("Access-Control-Allow-Origin", ORIGIN_URL)

@@ -5,8 +5,9 @@ from langchain.chains import create_sql_query_chain
 from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-
+from src.controllers.chat_controller import session
 from src import ORIGIN_URL, OPENAI_API_KEY, api, Resource, fields, logging, web_api
+from src.models.chat import CHAT_PROMPT
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -57,6 +58,7 @@ class EcommerceQueryResource(Resource):
     @ns_query_ecommerce.response(200, 'Success', response_model)
     def post(self):
         """Handles natural language to SQL queries for the ecommerce database."""
+        
         json_data = request.get_json()
         message = json_data.get('message')
 
@@ -66,6 +68,9 @@ class EcommerceQueryResource(Resource):
         # Execute the SQL query
         result = execute_query.invoke(query)
         response = rephrase_answer.invoke({"question": message, "query": query, "result": result})
-        return jsonify({"response": response})
+        query_response = {"response": response}
+        session['conversation_history'].append({"role": "assistant", "content": query_response})
+        logging.info(f"History: {session['conversation_history']}")
+        return jsonify({"response": query_response, "chat_history": session['conversation_history']})
 
 api.add_namespace(ns_query_ecommerce, path='/query-ecommerce')

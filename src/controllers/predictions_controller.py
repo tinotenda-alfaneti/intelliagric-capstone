@@ -69,18 +69,6 @@ class PredictMarketResource(Resource):
         session['conversation_history'].append({"role": "assistant", "content": refined_response})
         final_response = {'intent': 'predict agriculture market', 'message': refined_response}
         return jsonify({'response': final_response, 'chat_history': session['conversation_history']})
-    
-# handle preflight requests for chat
-@web_api.route('/predict-market', methods=['OPTIONS'])
-def predict_market_options():
-    logging.info("Started the preflight handling")
-    response = make_response()
-    response.headers.add("Access-Control-Allow-Origin", ORIGIN_URL)
-    response.headers.add("Access-Control-Allow-Headers", "Authorization, Content-Type")
-    response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
-    response.headers.add("Access-Control-Allow-Credentials", "true")
-    response.status_code = 200
-    return response
 
 api.add_namespace(ns_predict_disease, path='/predict-disease')
 api.add_namespace(ns_predict_market, path='/predict-market')  

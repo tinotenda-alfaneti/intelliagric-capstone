@@ -7,12 +7,16 @@ from flask_cors import CORS
 from flask_restx import Api, Resource, fields
 
 import firebase_admin
-from firebase_admin import credentials, storage, firestore, db
+from firebase_admin import credentials, storage, firestore, db, auth
 
 import openai
 from dotenv import load_dotenv
 import logging
 from newsapi import NewsApiClient
+from src.Config.config import Config
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
 
 web_api = Flask("src")
 
@@ -20,19 +24,32 @@ web_api = Flask("src")
 web_api.config["SESSION_PERMANENT"] = False
 web_api.config["SESSION_TYPE"] = "filesystem"
 web_api.config['PERMANENT_SESSION_LIFETIME'] =  timedelta(minutes=45)
+
+web_api.config.from_object(Config)
+
 Session(web_api)
+
+ORIGIN_URL = "http://localhost:3000" #TODO: Replace with the deployed version
 
 # secre key
 web_api.secret_key = os.urandom(24)
 
-cors = CORS(web_api)
-web_api.config['CORS_HEADERS'] = 'Content-Type'
+CORS(web_api, supports_credentials=True, resources={r"/*": {"origins": ORIGIN_URL}})
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
+authorizations = {
+    'Bearer Auth': {
+        'type': 'apiKey',
+        'in': 'header',
+        'name': 'Authorization'
+    }
+}
 
 # initialize API documentation
-api = Api(web_api, version='1.0', title='IntelliAgric API', description='An Intelligent Farming Assistant API')
+api = Api(web_api, version='1.0', 
+          title='IntelliAgric API', 
+          description='An Intelligent Farming Assistant API',
+          authorizations=authorizations,
+          security='Bearer Auth')
 
 # load private keys from dotenv
 load_dotenv('.env')
@@ -66,8 +83,6 @@ cred = credentials.Certificate({
 firebase_admin.initialize_app(credential=cred, options={'storageBucket': 'intelliagric-c1df6.appspot.com', 'databaseURL': 'https://intelliagric-c1df6-default-rtdb.firebaseio.com'})
 bucket = storage.bucket()
 database = firestore.client()
-db_ref = db.reference('/device') #TODO: Replace with actual endpoint here, this is going to be the device ID
-
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 newsapi = NewsApiClient(api_key=NEWS_API_KEY)
 from src.controllers import *

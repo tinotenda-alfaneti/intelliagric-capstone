@@ -49,8 +49,9 @@ class Predict:
             return API.identify([filename])
         
         # Format the string with the label and probability
-        result = f"With {probability:.3f} probability, the disease is {label}."
-        return result
+        output = {"model": "disease prediction", "disease_probability": f"{probability:.3f}", "crop": "maize", "recommendations": []}
+        # result = f"With {probability:.3f} probability, the disease is {label}."
+        return output
     
 
     @staticmethod
@@ -89,9 +90,11 @@ class Predict:
         predicted_crop = data['Item']
         mean_yield = result[result['Item'] == predicted_crop]['mean'].values[0]
 
-        if prediction > mean_yield - (0.75 * mean_yield):
-            demand_prediction = 'LOW'
-        else:
-            demand_prediction = 'HIGH'
+        # if prediction > mean_yield - (0.75 * mean_yield):
+        #     demand_prediction = 'LOW'
+        # else:
+        #     demand_prediction = 'HIGH'
 
-        return f"Demand for {predicted_crop} is likely going to be {demand_prediction} since supply prediction is {prediction} and past mean yield is {mean_yield}. [Assumption: Demand and supply are inversely proportional]"
+        output = {"model": "market prediction", "supply_prediction": prediction, "average_supply": mean_yield, "threshold": 75, "crop": predicted_crop, "country": data["Area"]}
+        # output = f"Demand for {predicted_crop} is likely going to be {demand_prediction} since supply prediction is {prediction} and past mean yield is {mean_yield}. [Assumption: Demand and supply are inversely proportional]"
+        return output

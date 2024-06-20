@@ -27,7 +27,6 @@ class TestChatSystem(BaseTestCase):
             self.assertIn('response', response.json)
     
     def test_full_chat_flow_market(self):
-
         with self.client:
             response = self.client.post('/chat/', json={'message': 'Predict future market for maize here in Ghana'})
             self.assertEqual(response.status_code, 200)
@@ -36,6 +35,15 @@ class TestChatSystem(BaseTestCase):
             self.assertIn('crop', response.json)
             self.assertEqual(response.json.intent, "#Predict Agriculture Market")
             self.assertIn('response', response.json)
+    
+    def test_full_flow_ecommerce(self):
+        with self.client:
+            response = self.client.post('/chat/', json={'message': 'What products are currently being sold?'})
+            self.assertEqual(response.status_code, 200)
+            self.assertIn('intent', response.json)
+            self.assertEqual(response.json.intent, "#Query Ecommerce Database")
+            self.assertIn('response', response.json)
+
 
 if __name__ == '__main__':
     unittest.main()

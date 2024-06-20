@@ -1,35 +1,48 @@
 from flask import request, jsonify, make_response
 import os
 from werkzeug.utils import secure_filename
-from src import web_api, ORIGIN_URL, logging
+from src import web_api, ORIGIN_URL, logging, api
+from flask_restx import Resource, fields
 
-# Define the upload folder
-UPLOAD_FOLDER = os.path.dirname(__file__) + 'uploads'
+UPLOAD_FOLDER = os.path.dirname(__file__) + '/uploads'
 web_api.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Ensure the upload folder exists
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
+ns_upload = api.namespace('upload', description='Image upload operations')
 
-@web_api.route('/upload-image', methods=['POST'])
-def upload_image():
-    # Check if the post request has the file part
-    if 'image' not in request.files:
-        return jsonify({"error": "No image part in the request"}), 400
-    
-    file = request.files['image']
-    
-    # If the user does not select a file, the browser submits an empty file without a filename
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-    
-    # Secure the filename and save it to the upload folder
-    if file:
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(web_api.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-        return jsonify({"path": filepath}), 200
+# Define the model for Swagger documentation
+upload_response_model = ns_upload.model('Upload', {
+    'image': fields.String(required=True, description='Path to the crop image')
+})
+upload_model = ns_upload.model('UploadImage', {
+    'image': fields.Raw(required=True, description='Image file to upload')
+})
+
+# Create the resource class for the image upload endpoint
+@ns_upload.route('/image')
+class UploadImageResource(Resource):
+    @ns_upload.expect(upload_model)
+    @ns_upload.response(200, 'Success', model=upload_response_model)
+    @ns_upload.response(400, 'Bad Request')
+    def post(self):
+        """Uploads an image and returns the file path."""
+        if 'image' not in request.files:
+            return jsonify({"error": "No image part in the request"}), 400
+        
+        file = request.files['image']
+        
+        if file.filename == '':
+            return jsonify({"error": "No selected file"}), 400
+        
+        if file:
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(web_api.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            return jsonify({"path": filepath}), 200
+            
+api.add_namespace(ns_upload, path='/upload')
     
 # --------------------- handle all preflight requests
 
@@ -39,6 +52,7 @@ def upload_image():
 @web_api.route('/query-ecommerce', methods=['OPTIONS'])
 @web_api.route('/predict-market', methods=['OPTIONS'])
 @web_api.route('/predict-disease', methods=['OPTIONS'])
+@web_api.route('/upload/image', methods=['OPTIONS'])
 
 def handle_options():
     logging.info("Started the preflight handling")

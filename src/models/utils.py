@@ -100,6 +100,21 @@ class API:
         except KeyError:
             print("Error: Unable to retrieve coordinates for the specified country.")
             return None, None
+        
+    @staticmethod
+    def fetch_weather_data(country):
+        weather_api_url = 'https://api.openweathermap.org/data/2.5/weather'
+        params = {
+            'q': country,
+            'appid': WEATHER_API_KEY,
+            'units': 'metric'
+        }
+        response = requests.get(weather_api_url, params=params)
+        if response.status_code == 200:
+            weather_data = response.json()
+            return weather_data['weather'][0]['description']
+        else:
+            return 'Weather data not available'
 
     
 

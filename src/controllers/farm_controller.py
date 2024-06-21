@@ -3,10 +3,13 @@ from firebase_admin import db
 from src.auth.auth import verify_id_token
 from src import api, database, Resource, fields, web_api
 from src.auth.auth import login_required
+from src.models.firebase import Firebase
+from src.models.utils import API
+from src.models.chat import Chat
 
-ns_farm = api.namespace('register-farm', description='Register Farm')
+ns_farm = api.namespace('farm', description='Farm Manageement endpoint - register and overview')
 
-farm_model = api.model('Farm', {
+farm_model = api.model('RegisterFarm', {
     'idToken': fields.String(required=True, description='Firebase ID token'),
     'iotDeviceSerial': fields.String(required=False, description='IoT Device Serial Number'),
     'droneSerial': fields.String(required=False, description='Drone Serial Number'),
@@ -17,7 +20,18 @@ farm_model = api.model('Farm', {
     'contact': fields.String(required=True, description='Contact'),
 })
 
-@ns_farm.route('/')
+# Model for the farm overview response
+#TODO: Add shop info
+farm_overview_model = api.model('FarmOverview', {
+    'farm_name': fields.String(required=True, description='The name of the farm'),
+    'country': fields.String(required=True, description='The country the farm is located'),
+    'farming_type': fields.String(required=True, description='Type of farming'),
+    'land_size': fields.String(required=True, description='Size of the land in hectares'),
+    'weather_conditions': fields.String(required=True, description='Current weather conditions'),
+    'recommendations': fields.String(required=True, description='Recommendations based on current data'),
+})
+
+@ns_farm.route('/register')
 class RegisterFarm(Resource):
     @login_required
     @ns_farm.expect(farm_model)
@@ -54,27 +68,45 @@ class RegisterFarm(Resource):
                 'farming_type': farming_type,
                 'contact': contact
             }
-            database.collection('farms').add(farm_data)
-
+            
+            Firebase.add_farm(farm_data)
             if iot_device_serial:
-                link_device_to_user(uid, iot_device_serial, 'iot')
+                Firebase.link_device_to_user(uid, iot_device_serial, 'iot')
             if drone_serial:
-                link_device_to_user(uid, drone_serial, 'drone')
+                Firebase.link_device_to_user(uid, drone_serial, 'drone')
 
             if iot_device_serial:
-                ref = db.reference(f'iot/{uid}')
-                ref.set({'serialnum': iot_device_serial})
+                Firebase.add_device_serial(uid, iot_device_serial)
 
             return {'status': 'success'}, 200
 
         except Exception as e:
             return {'error': str(e)}, 400
+        
+@ns_farm.route('/overview')
+class FarmOverview(Resource):
+    @login_required
+    @ns_farm.response(200, 'Success', model=farm_overview_model)
+    @ns_farm.response(400, 'Validation Error')
+    def get(self):
 
-def link_device_to_user(uid, serial_number, device_type):
-    device_ref = database.collection(f'{device_type}_devices').document(serial_number)
-    device_ref.set({
-        'farmer_id': uid,
-        'device_type': device_type
-    }, merge=True)
+        try:
+            farm_info = Firebase.get_farm_info(web_api.config["AUTH_TOKEN"])
 
-api.add_namespace(ns_farm, path='/register-farm')
+            weather_info = API.fetch_weather_data(farm_info['country'])
+
+            farm_info['weather_conditions'] = weather_info
+
+            recommendations = Chat.farm_overview(farm_info)
+
+            farm_info['recommendations'] = recommendations
+
+            return {'response': farm_info}, 200
+
+        except Exception as e:
+            return {'error': str(e)}, 400
+
+
+
+api.add_namespace(ns_farm, path='/farm/register')
+api.add_namespace(ns_farm, path='/farm/overview')

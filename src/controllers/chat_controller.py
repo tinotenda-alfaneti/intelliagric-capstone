@@ -3,6 +3,7 @@ from flask import request, jsonify, session, make_response
 import os
 from src.models.chat import Chat
 from src.models.chat import CHAT_PROMPT
+from src.models.firebase import Firebase
 from src.models.predictions import Predict
 from src.auth.auth import login_required
 
@@ -65,7 +66,7 @@ class ChatResource(Resource):
         """Saves chat messages from the user and assistant."""
         user_input = request.json
 
-        add_response = Chat.save_chat(user_input)
+        add_response = Firebase.save_chat(user_input)
 
         if "error" in add_response:
             return jsonify({"error" : "Message not saved"})

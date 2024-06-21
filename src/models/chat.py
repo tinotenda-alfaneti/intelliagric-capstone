@@ -1,5 +1,5 @@
 from src import client, database, web_api
-from src.models.utils import INITIAL_STAGE_PROMPT
+from src.models.utils import INITIAL_STAGE_PROMPT, REFINE_RESPONSE_PROMPT
 import json
 
 REFINING_PROMPT = """
@@ -57,6 +57,8 @@ class Chat:
     def refine_response(user_input, model_data):
         prompt = f"""
         
+        ###Instructions
+        {REFINE_RESPONSE_PROMPT}
         User: {user_input}
         Model Data: {model_data}
         Refined Response:
@@ -110,17 +112,23 @@ class Chat:
             max_tokens=MAX_TOKENS
         )
         return response.choices[0].message.content
-    
-    @staticmethod
-    def save_chat(message):
-
-        try:
-            db = database.collection(f'history-{web_api.config["AUTH_TOKEN"]}')
-
-            db.add(message)
-
-            print(f'Document added with ID: {db[1].id}')
         
-            return json.dumps({"Success":"Data Added Successfully"})
-        except:
-            return json.dumps({"error":"Please Enter Valid Data"}, default=TypeError)
+    @staticmethod
+    def farm_overview(farm_info):
+
+        prompt = f"""
+                Based on the following farm information, provide an analysis, insights and recommendations for a small-scale farmer in Africa.
+
+                Farm Information: {farm_info}
+
+                Your task is to analyze this farm data and offer practical, easy-to-understand advice. Make sure your recommendations are specific to small-scale farmers in Africa. Break down any complex ideas and provide actionable steps that the farmer can take to improve their soil health and crop yield.
+
+            """
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "system", "content": prompt}],
+            temperature=0,
+            max_tokens=MAX_TOKENS
+        )
+        return response.choices[0].message.content
+        

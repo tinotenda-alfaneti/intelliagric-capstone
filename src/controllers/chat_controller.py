@@ -77,32 +77,51 @@ class ChatResource(Resource):
     @login_required
     @ns_chat.expect(single_message_model)
     @ns_chat.response(200, 'Success')
+    @ns_chat.response(400, 'Bad Request')
+    @ns_chat.response(500, 'Internal Server Error')
     def post(self):
         """Saves chat messages from the user and assistant."""
-        user_input = request.json
+        try:
+            user_input = request.json
+            if not user_input:
+                return jsonify({"error": "Invalid input: No data provided"}), 400
 
-        add_response = Firebase.save_chat(user_input)
+            add_response = Firebase.save_chat(user_input)
+            response_data = json.loads(add_response)
 
-        if "error" in add_response:
-            return jsonify({"error" : "Message not saved"})
+            if "error" in response_data:
+                return jsonify({"error": response_data["error"]}), 400
 
-        return jsonify({"success" : "Message saved successfully"})
+            return jsonify({"success": "Message saved successfully"}), 200
+        
+        except json.JSONDecodeError:
+            return jsonify({"error": "Invalid JSON format"}), 400
+        
+        except Exception as e:
+            return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
 @ns_chat.route('/saved_chats')
 class RetrieveChatResource(Resource):
     @login_required
     @ns_chat.response(200, 'Success', model=messages_response_model)
-    @ns_chat.response(400, 'Error', model=error_response_model)
+    @ns_chat.response(400, 'Bad Request', model=error_response_model)
+    @ns_chat.response(500, 'Internal Server Error', model=error_response_model)
     def get(self):
         """Retrieves chat history saved by the user."""
-        retrieve_response = Firebase.retrieve_saved_chats()
+        try:
+            retrieve_response = Firebase.retrieve_saved_chats()
+            response_data = json.loads(retrieve_response)
+            
+            if "error" in response_data:
+                return jsonify({"error": response_data["error"]}), 400
 
-        response_data = json.loads(retrieve_response)
-        
-        if "error" in response_data:
-            return jsonify({"error": "Messages not retrieved"}), 400
+            return jsonify({"success": "Messages retrieved successfully", "messages": response_data["messages"]}), 200
 
-        return jsonify({"success": "Messages retrieved successfully", "messages": response_data["messages"]}), 200
+        except json.JSONDecodeError:
+            return jsonify({"error": "Invalid JSON format"}), 400
+
+        except Exception as e:
+            return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
   
     
 api.add_namespace(ns_chat, path='/chat')

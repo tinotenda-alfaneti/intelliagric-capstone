@@ -7,7 +7,7 @@ from src.models.firebase import Firebase
 from src.models.utils import API
 from src.models.chat import Chat
 
-ns_farm = api.namespace('farm', description='Farm Manageement endpoint - register and overview')
+ns_farm = api.namespace('farm', description='Farm Management endpoint - register and overview')
 
 farm_model = api.model('RegisterFarm', {
     'idToken': fields.String(required=True, description='Firebase ID token'),

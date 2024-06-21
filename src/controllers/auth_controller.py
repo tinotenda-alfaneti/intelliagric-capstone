@@ -54,4 +54,5 @@ class LogoutResource(Resource):
         return response
 
     
-    
+api.add_namespace(ns_auth, path='/auth/login')
+api.add_namespace(ns_auth, path='/auth/logout')

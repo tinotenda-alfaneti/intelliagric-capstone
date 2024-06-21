@@ -55,6 +55,8 @@ api.add_namespace(ns_upload, path='/upload')
 @web_api.route('/upload/image', methods=['OPTIONS'])
 @web_api.route('/farm/overview', methods=['OPTIONS'])
 @web_api.route('/farm/register', methods=['OPTIONS'])
+@web_api.route('/auth/login', methods=['OPTIONS'])
+@web_api.route('/auth/logout', methods=['OPTIONS'])
 
 def handle_options():
     logging.info("Started the preflight handling")

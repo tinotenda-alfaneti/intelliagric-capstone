@@ -5,7 +5,7 @@ import urllib.request
 
 BASE_URL = "https://gnews.io/api/v4/search"
 
-ns_agriculture_news = api.namespace('agriculture-news', description='Agriculture news operations')
+ns_agriculture_news = api.namespace('agriculture_news', description='Agriculture news operations')
 
 # Define the models for Swagger documentation
 news_model = api.model('NewsArticle', {

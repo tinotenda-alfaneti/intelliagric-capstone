@@ -10,8 +10,8 @@ from src import logging, web_api, database, db, api, Resource, fields
 
 user_token = web_api.config["AUTH_TOKEN"]
 
-ns_soil_data = api.namespace('get-soil-data', description='Soil data from IoT device readings')
-ns_soil_analysis = api.namespace('soil-analysis', description='Soil Analysis from IoT device data')
+ns_soil_data = api.namespace('get_soil_data', description='Soil data from IoT device readings')
+ns_soil_analysis = api.namespace('soil_analysis', description='Soil Analysis from IoT device data')
 
 # Define the models for Swagger documentation
 soil_data_model = api.model('SoilData', {

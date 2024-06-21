@@ -35,7 +35,8 @@ class LoginResource(Resource):
         # scheduler.add_job(func=save_daily_average, trigger='cron', hour=0, minute=0)
         # uncomment for testing
         scheduler.add_job(func=save_daily_average, trigger='interval', seconds=60)
-        scheduler.start()
+        if scheduler.running == False:
+            scheduler.start()
         start_transfer()
 
         response = jsonify({"success": "Login successful"})

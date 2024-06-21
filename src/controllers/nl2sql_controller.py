@@ -41,7 +41,7 @@ except Exception as e:
     logging.error(f"Error loading SQL Database - {e}")
 
 
-ns_query_ecommerce = api.namespace('query-ecommerce', description='Natural Language ecommerce query operations')
+ns_query_ecommerce = api.namespace('query_ecommerce', description='Natural Language ecommerce query operations')
 
 # Define the models for Swagger documentation
 ecommerce_query_model = api.model('EcommerceQuery', {

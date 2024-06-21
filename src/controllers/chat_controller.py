@@ -1,6 +1,6 @@
 from src import ORIGIN_URL, web_api, api, Resource, fields, logging
 from flask import request, jsonify, session, make_response
-import os
+import os, json
 from src.models.chat import Chat
 from src.models.chat import CHAT_PROMPT
 from src.models.firebase import Firebase
@@ -24,6 +24,21 @@ single_message_model = api.model('SingleMessage', {
     'role': fields.String(required=True, description='Whether the message is from User or Assistant'),
     'content': fields.String(required=True, description='The message'),
     'timestamp': fields.DateTime(required=True, description='The date and time the message was sent')
+})
+
+saved_message_model = ns_chat.model('SavedMessage', {
+    'user_id': fields.String(required=True, description='ID of the user'),
+    'message': fields.String(required=True, description='The chat message'),
+    'timestamp': fields.String(required=True, description='Timestamp of the message')
+})
+
+messages_response_model = ns_chat.model('SavedMessagesResponse', {
+    'success': fields.String(required=True, description='Success message'),
+    'messages': fields.List(fields.Nested(message_model), description='List of chat messages')
+})
+
+error_response_model = ns_chat.model('ErrorResponse', {
+    'error': fields.String(required=True, description='Error message')
 })
 
 TEST_IMG = os.path.dirname(__file__) + "/uploads/example.jpg"
@@ -71,7 +86,25 @@ class ChatResource(Resource):
         if "error" in add_response:
             return jsonify({"error" : "Message not saved"})
 
-        return jsonify({"success" : "Message saved successfully"})  
+        return jsonify({"success" : "Message saved successfully"})
+
+@ns_chat.route('/saved_chats')
+class RetrieveChatResource(Resource):
+    @login_required
+    @ns_chat.response(200, 'Success', model=messages_response_model)
+    @ns_chat.response(400, 'Error', model=error_response_model)
+    def get(self):
+        """Retrieves chat history saved by the user."""
+        retrieve_response = Firebase.retrieve_saved_chats()
+
+        response_data = json.loads(retrieve_response)
+        
+        if "error" in response_data:
+            return jsonify({"error": "Messages not retrieved"}), 400
+
+        return jsonify({"success": "Messages retrieved successfully", "messages": response_data["messages"]}), 200
+  
     
 api.add_namespace(ns_chat, path='/chat')
 api.add_namespace(ns_chat, path='/chat/save')
+api.add_namespace(ns_chat, path='/chat/saved_chats')

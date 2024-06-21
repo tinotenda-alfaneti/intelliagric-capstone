@@ -22,39 +22,56 @@ class Firebase:
         else:
             return {'error': 'Farm not found'}
 
-    #TODO: Add error handling  
     @staticmethod
     def link_device_to_user(uid, serial_number, device_type):
-        device_ref = database.collection(f'{device_type}_devices').document(serial_number)
-        device_ref.set({
-            'farmer_id': uid,
-            'device_type': device_type
-        }, merge=True)
-
+        try:
+            device_ref = database.collection(f'{device_type}_devices').document(serial_number)
+            device_ref.set({
+                'farmer_id': uid,
+                'device_type': device_type
+            }, merge=True)
+            return json.dumps({"Success": "Device linked to user successfully"})
+        except Exception as e:
+            return json.dumps({"error": str(e)})
+    
     @staticmethod
     def add_farm(farm_data):
-
-        database.collection('farms').document(farm_data['farmer_id']).add(farm_data)
-
+        try:
+            database.collection('farms').document(farm_data['farmer_id']).add(farm_data)
+            return json.dumps({"Success": "Farm added successfully"})
+        except Exception as e:
+            return json.dumps({"error": str(e)})
+    
     @staticmethod
     def add_device_serial(uid, iot_device_serial):
-        ref = db.reference(f'iot/{uid}')
-        ref.set({'serialnum': iot_device_serial})
+        try:
+            ref = db.reference(f'iot/{uid}')
+            ref.set({'serialnum': iot_device_serial})
+            return json.dumps({"Success": "Device serial added successfully"})
+        except Exception as e:
+            return json.dumps({"error": str(e)})
 
     @staticmethod
     def save_chat(message):
-
         try:
             db = database.collection(f'history-{web_api.config["AUTH_TOKEN"]}')
-
-            db.add(message)
-
-            print(f'Document added with ID: {db[1].id}')
+            doc_ref = db.add(message)
+            print(f'Document added with ID: {doc_ref.id}')
+            return json.dumps({"Success": "Data added successfully"})
+        except Exception as e:
+            return json.dumps({"error": str(e)})
         
-            return json.dumps({"Success":"Data Added Successfully"})
-        except:
-            return json.dumps({"error":"Please Enter Valid Data"}, default=TypeError)
-
+    @staticmethod
+    def retrieve_saved_chats():
+        try:
+            db = database.collection(f'history-{web_api.config["AUTH_TOKEN"]}')
+            messages = db.stream()
+            message_list = []
+            for message in messages:
+                message_list.append(message.to_dict())
+            return json.dumps({"Success": "Messages retrieved successfully", "messages": message_list})
+        except Exception as e:
+            return json.dumps({"error": str(e)})
 
 
 

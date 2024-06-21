@@ -10,8 +10,8 @@ from src.models.chat import Chat
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-ns_predict_disease = api.namespace('predict-disease', description='Disease prediction operations')
-ns_predict_market = api.namespace('predict-market', description='Market prediction operations')
+ns_predict_disease = api.namespace('predict_disease', description='Disease prediction operations')
+ns_predict_market = api.namespace('predict_market', description='Market prediction operations')
 
 
 predict_disease_model = api.model('PredictDisease', {
@@ -70,5 +70,5 @@ class PredictMarketResource(Resource):
         final_response = {'intent': 'predict agriculture market', 'message': refined_response}
         return jsonify({'response': final_response, 'chat_history': session['conversation_history']})
 
-api.add_namespace(ns_predict_disease, path='/predict-disease')
-api.add_namespace(ns_predict_market, path='/predict-market')  
+api.add_namespace(ns_predict_disease, path='/predict_disease')
+api.add_namespace(ns_predict_market, path='/predict_market')  

@@ -17,6 +17,10 @@ The web app will be open on http://127.0.0.1:5000
 
 `python -m unittest discover -s tests` 
 
+## Generate test suites reports and coverage
+
+`pytest --html=report.html --cov=src --cov-report=html`
+
 ## Example test for frontend of protected endpoints
 ```
 // Example using fetch in JavaScript

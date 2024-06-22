@@ -11,3 +11,4 @@ flask_session
 venv
 tests/resources/config.py
 .vscode
+.coverage

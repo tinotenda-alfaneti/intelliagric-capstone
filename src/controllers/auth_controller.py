@@ -48,8 +48,7 @@ class LogoutResource(Resource):
     def post(self):
         '''Logout controller'''
         web_api.config["AUTH_TOKEN"] = 'none'
-        # Ensure the scheduler shuts down when the app exits
-        scheduler.shutdown()
+        session.clear()
         response = jsonify({"success": "Logout successful"})
         response.status_code = 200
         return response

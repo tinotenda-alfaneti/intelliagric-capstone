@@ -10,3 +10,4 @@ flask_session
 .vercel
 venv
 tests/resources/config.py
+.vscode

@@ -152,8 +152,8 @@ class SoilAnalysisResource(Resource):
     @ns_soil_analysis.response(200, 'Success', [analysis_response_model])
     @ns_soil_data.doc(security='Bearer Auth')
     def get(self):
-        
-        get_data_response = requests.get(f'{request.url_root}/get-soil-data')
+        user_token = web_api.config["AUTH_TOKEN"]
+        get_data_response = requests.get(f'{request.url_root}/get_soil_data', headers={"Authorization": f"Bearer {user_token}"})
         
         if get_data_response.status_code != 200:
             return jsonify({"error": "Failed to retrieve data"}), 500

@@ -84,21 +84,21 @@ class ChatResource(Resource):
         try:
             user_input = request.json
             if not user_input:
-                return jsonify({"error": "Invalid input: No data provided"}), 400
+                return jsonify({"error": "Invalid input: No data provided"})
 
             add_response = Firebase.save_chat(user_input)
             response_data = json.loads(add_response)
 
             if "error" in response_data:
-                return jsonify({"error": response_data["error"]}), 400
+                return jsonify({"error": response_data["error"]})
 
-            return jsonify({"success": "Message saved successfully"}), 200
+            return jsonify({"success": "Message saved successfully"})
         
         except json.JSONDecodeError:
-            return jsonify({"error": "Invalid JSON format"}), 400
+            return jsonify({"error": "Invalid JSON format"})
         
         except Exception as e:
-            return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
+            return jsonify({"error": f"An unexpected error occurred: {str(e)}"})
 
 @ns_chat.route('/saved_chats')
 class RetrieveChatResource(Resource):
@@ -113,15 +113,15 @@ class RetrieveChatResource(Resource):
             response_data = json.loads(retrieve_response)
             
             if "error" in response_data:
-                return jsonify({"error": response_data["error"]}), 400
+                return jsonify({"error": response_data["error"]})
 
-            return jsonify({"success": "Messages retrieved successfully", "messages": response_data["messages"]}), 200
+            return jsonify({"success": "Messages retrieved successfully", "messages": response_data["messages"]})
 
         except json.JSONDecodeError:
-            return jsonify({"error": "Invalid JSON format"}), 400
+            return jsonify({"error": "Invalid JSON format"})
 
         except Exception as e:
-            return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
+            return jsonify({"error": f"An unexpected error occurred: {str(e)}"})
   
     
 api.add_namespace(ns_chat, path='/chat')

@@ -46,12 +46,12 @@ api.add_namespace(ns_upload, path='/upload')
     
 # --------------------- handle all preflight requests
 
-@web_api.route('/get-soil-data', methods=['OPTIONS'])
-@web_api.route('/soil-analysis', methods=['OPTIONS'])
+@web_api.route('/get_soil_data', methods=['OPTIONS'])
+@web_api.route('/soil_analysis', methods=['OPTIONS'])
 @web_api.route('/chat', methods=['OPTIONS'])
-@web_api.route('/query-ecommerce', methods=['OPTIONS'])
-@web_api.route('/predict-market', methods=['OPTIONS'])
-@web_api.route('/predict-disease', methods=['OPTIONS'])
+@web_api.route('/query_ecommerce/', methods=['OPTIONS'])
+@web_api.route('/predict_market', methods=['OPTIONS'])
+@web_api.route('/predict_disease', methods=['OPTIONS'])
 @web_api.route('/upload/image', methods=['OPTIONS'])
 @web_api.route('/farm/overview', methods=['OPTIONS'])
 @web_api.route('/farm/register', methods=['OPTIONS'])

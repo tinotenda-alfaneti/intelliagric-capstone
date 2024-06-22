@@ -58,6 +58,10 @@ class EcommerceQueryResource(Resource):
     @ns_query_ecommerce.response(200, 'Success', response_model)
     def post(self):
         """Handles natural language to SQL queries for the ecommerce database."""
+
+         
+        if 'conversation_history' not in session:
+            session['conversation_history'] = []
         
         json_data = request.get_json()
         message = json_data.get('message')
@@ -73,4 +77,4 @@ class EcommerceQueryResource(Resource):
         logging.info(f"History: {session['conversation_history']}")
         return jsonify({"response": query_response, "chat_history": session['conversation_history']})
 
-api.add_namespace(ns_query_ecommerce, path='/query-ecommerce')
+api.add_namespace(ns_query_ecommerce, path='/query_ecommerce')

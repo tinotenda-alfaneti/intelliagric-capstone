@@ -37,7 +37,8 @@ class Firebase:
     @staticmethod
     def add_farm(farm_data):
         try:
-            database.collection('farms').document(farm_data['farmer_id']).add(farm_data)
+            doc_ref = database.collection('farms').document(farm_data['farmer_id'])
+            doc_ref.set(farm_data)
             return json.dumps({"Success": "Farm added successfully"})
         except Exception as e:
             return json.dumps({"error": str(e)})

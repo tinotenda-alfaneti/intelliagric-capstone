@@ -1,4 +1,4 @@
-from flask import request, jsonify, make_response
+from flask import request, jsonify, make_response, json
 from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_openai import ChatOpenAI
 from langchain.chains import create_sql_query_chain
@@ -40,7 +40,6 @@ try:
 except Exception as e:
     logging.error(f"Error loading SQL Database - {e}")
 
-
 ns_query_ecommerce = api.namespace('query_ecommerce', description='Natural Language ecommerce query operations')
 
 # Define the models for Swagger documentation
@@ -59,22 +58,32 @@ class EcommerceQueryResource(Resource):
     def post(self):
         """Handles natural language to SQL queries for the ecommerce database."""
 
-         
         if 'conversation_history' not in session:
             session['conversation_history'] = []
-        
-        json_data = request.get_json()
-        message = json_data.get('message')
 
-        # Generate SQL query from natural language question
-        query = generate_query.invoke({"question": message})
+        data = request.get_json()
+        message = data.get('message')
 
-        # Execute the SQL query
-        result = execute_query.invoke(query)
-        response = rephrase_answer.invoke({"question": message, "query": query, "result": result})
-        query_response = {"response": response}
-        session['conversation_history'].append({"role": "assistant", "content": query_response})
-        logging.info(f"History: {session['conversation_history']}")
-        return jsonify({"response": query_response, "chat_history": session['conversation_history']})
+        if not message:
+            return make_response(jsonify({"error": "Message is required"}), 400)
+
+        try:
+            # Generate SQL query from natural language question
+            query = generate_query.invoke({"question": message})
+            # Execute the SQL query
+            result = execute_query.invoke(query)
+            response = rephrase_answer.invoke({"question": message, "query": query['query'], "result": result})
+            logging.info(f"Response: {response}")
+
+            session['conversation_history'].append({"role": "assistant", "content": response})
+
+            logging.info(f"History: {session['conversation_history']}")
+            return make_response(jsonify({"response": response, "chat_history": session['conversation_history']}), 200)
+
+        except Exception as e:
+            logging.error(f"Error processing query - {e}")
+            return make_response(jsonify({"error": "An error occurred while processing your request"}), 500)
+
+
 
 api.add_namespace(ns_query_ecommerce, path='/query_ecommerce')

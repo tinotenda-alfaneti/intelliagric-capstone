@@ -1,79 +1,85 @@
 import logging
 import unittest
 from unittest.mock import patch, MagicMock
-from flask_testing import TestCase
-from flask import json
-from src import web_api, api, Resource, fields
-from langchain_openai import ChatOpenAI
-from langchain.chains import create_sql_query_chain
-from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
-from langchain_core.prompts import PromptTemplate
-from langchain_core.output_parsers import StrOutputParser
+from flask import json, request, session
+from src import web_api
+from src.controllers.nl2sql_controller import EcommerceQueryResource
 from resources.config import TOKEN
-
-
-# Import app components
-from src.controllers.chat_controller import session
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-class BaseTestCase(TestCase):
-    def create_app(self):
-        web_api.config['TESTING'] = True
-        web_api.config['WTF_CSRF_ENABLED'] = False
-        return web_api
+class TestEcommerceQueryResource(unittest.TestCase):
+
     def setUp(self):
+        # Initialize Flask test client
+        self.app = web_api
+        self.app.config['TESTING'] = True
         self.client = self.app.test_client()
         self.client.environ_base['HTTP_AUTHORIZATION'] = f"Bearer {TOKEN}"
 
-class TestEcommerceQuerySystem(BaseTestCase):
+    @patch('src.controllers.nl2sql_controller.generate_query')
+    @patch('src.controllers.nl2sql_controller.execute_query')
+    @patch('src.controllers.nl2sql_controller.rephrase_answer')
+    def test_post_success(self, mock_rephrase_answer, mock_execute_query, mock_generate_query):
+        # Setup Mocks
+        mock_generate_query.invoke.return_value = {'query': 'SELECT * FROM employees WHERE department = "Sales";'}
+        mock_execute_query.invoke.return_value = [{'name': 'John Doe', 'department': 'Sales'}]
+        mock_rephrase_answer.invoke.return_value = 'John Doe works in the Sales department.'
 
-    @patch('src.controllers.nl2sql_controller.SQLDatabase')
-    @patch('src.controllers.nl2sql_controller.ChatOpenAI')
-    @patch('src.controllers.nl2sql_controller.create_sql_query_chain')
-    @patch.object(QuerySQLDataBaseTool, 'invoke')
-    @patch.object(StrOutputParser, 'invoke')
-    def test_ecommerce_query_success(self, mock_sql_database, mock_chat_openai, mock_create_sql_query_chain,
-                                     mock_invoke_sql_query_tool, mock_invoke_str_output_parser):
-        # Mock instances
-        mock_sql_database.return_value = MagicMock()
-        mock_chat_openai.return_value = MagicMock()
-        mock_create_sql_query_chain.return_value = MagicMock()
-        mock_invoke_sql_query_tool.return_value = 'Mocked SQL Result'
-        mock_invoke_str_output_parser.return_value = 'Mocked Response'
+        # Mock request data
+        with self.app.test_request_context('/query_ecommerce/', method='POST', json={'message': 'Show me all employees in the Sales department'}, headers={"Authorization": f"Bearer {TOKEN}"}):
+            # Mock Flask session
+            with self.client.session_transaction() as sess:
+                sess['conversation_history'] = []
 
-        with self.client:
-            response = self.client.post('/query_ecommerce/', json={'message': 'What are the latest products?'}, headers={"Authorization": f"Bearer {TOKEN}"})
-            
+            # Make the POST request
+            response = self.client.post('/query_ecommerce/', json={'message': 'Show me all employees in the Sales department'}, headers={"Authorization": f"Bearer {TOKEN}"})
+            response_data = response.json
+
+            # Assertions
             self.assertEqual(response.status_code, 200)
-            self.assertIn('response', response.json)
-            self.assertEqual(response.json['response'], 'Mocked Response')
+            self.assertIn('response', response_data)
+            self.assertEqual(response_data['response'], 'John Doe works in the Sales department.')
+            self.assertIn('chat_history', response_data)
+            self.assertEqual(len(response_data['chat_history']), 1)
+            self.assertEqual(response_data['chat_history'][0]['content'], 'John Doe works in the Sales department.')
 
-            # Verify session history update
-            self.assertIn('chat_history', response.json)
-            chat_history = response.json['chat_history']
-            self.assertIsInstance(chat_history, list)
-            self.assertEqual(len(chat_history), 1)
-            self.assertEqual(chat_history[0]['role'], 'assistant')
-            self.assertIn('response', chat_history[0]['content'])
 
-    @patch('src.controllers.nl2sql_controller.SQLDatabase')
-    @patch('src.controllers.nl2sql_controller.ChatOpenAI')
-    @patch('src.controllers.nl2sql_controller.create_sql_query_chain')
-    @patch.object(QuerySQLDataBaseTool, 'invoke', side_effect=Exception('Database error'))
-    def test_ecommerce_query_database_error(self, mock_sql_database, mock_chat_openai, mock_create_sql_query_chain, mock_invoke_sql_query_tool):
-        # Mock instances
-        mock_sql_database.return_value = MagicMock()
-        mock_chat_openai.return_value = MagicMock()
-        mock_create_sql_query_chain.return_value = MagicMock()
+    @patch('src.controllers.nl2sql_controller.generate_query')
+    def test_post_no_message(self, mock_generate_query):
+        # Mock request data
+        with self.app.test_request_context('/query_ecommerce/', method='POST', json={}, headers={"Authorization": f"Bearer {TOKEN}"}):
+            # Make the POST request
+            response = self.client.post('/query_ecommerce/', json={}, headers={"Authorization": f"Bearer {TOKEN}"})
+            response_data = response.json
 
-        with self.client:
-            response = self.client.post('/query_ecommerce/', json={'message': 'What are the latest products?'}, headers={"Authorization": f"Bearer {TOKEN}"})
-            
+            # Assertions
             self.assertEqual(response.status_code, 400)
-            self.assertIn('error', response.json)
-            self.assertEqual(response.json['error'], 'Database error')
+            self.assertIn('error', response_data)
+            self.assertEqual(response_data['error'], 'Message is required')
+
+
+    @patch('src.controllers.nl2sql_controller.generate_query', side_effect=Exception('Mocked exception'))
+    def test_post_generate_query_exception(self, mock_generate_query):
+        # Mock request data
+        with self.app.test_request_context('/query_ecommerce/', method='POST', json={'message': 'Show me all employees in the Sales department'}, headers={"Authorization": f"Bearer {TOKEN}"}):
+            # with patch('flask.request.get_json') as mock_get_json:
+            with patch('flask.request.get_json', return_value={'message': 'Show me all employees in the Sales department'}):
+                # mock_get_json.return_value = {'message': 'Show me all employees in the Sales department'}
+                
+                # Mock Flask session
+                with self.client.session_transaction() as sess:
+                    sess['conversation_history'] = []
+
+                # Make the POST request
+                response = self.client.post('/query_ecommerce/', json={'message': 'Show me all employees in the Sales department'}, headers={"Authorization": f"Bearer {TOKEN}"})
+                response_data = response.get_json()
+
+                # Assertions
+                self.assertEqual(response.status_code, 500)
+                self.assertIn('error', response_data)
+                self.assertEqual(response_data['error'], 'An error occurred while processing your request')
 
 if __name__ == '__main__':
     unittest.main()

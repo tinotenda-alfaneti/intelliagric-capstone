@@ -1,3 +1,4 @@
+import logging
 from flask import request
 from firebase_admin import db
 from src.auth.auth import verify_id_token
@@ -6,6 +7,9 @@ from src.auth.auth import login_required
 from src.models.firebase import Firebase
 from src.models.utils import API
 from src.models.chat import Chat
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
 
 ns_farm = api.namespace('farm', description='Farm Management endpoint - register and overview')
 
@@ -69,7 +73,8 @@ class RegisterFarm(Resource):
                 'contact': contact
             }
             
-            Firebase.add_farm(farm_data)
+            response = Firebase.add_farm(farm_data)
+            logging.info(f"Firebase response: {response}")
             if iot_device_serial:
                 Firebase.link_device_to_user(uid, iot_device_serial, 'iot')
             if drone_serial:

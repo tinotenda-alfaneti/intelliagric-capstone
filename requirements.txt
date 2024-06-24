@@ -1,0 +1,6 @@
+flask
+djitellopy
+opencv-python
+schedule
+requests
+firebase-admin

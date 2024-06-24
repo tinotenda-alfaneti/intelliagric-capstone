@@ -1,5 +1,6 @@
-from src import client, database, web_api, db
+from src import client, database, web_api, db, bucket
 import json
+import time
 
 class Firebase:
 
@@ -73,6 +74,42 @@ class Firebase:
             return json.dumps({"Success": "Messages retrieved successfully", "messages": message_list})
         except Exception as e:
             return json.dumps({"error": str(e)})
+        
+    @staticmethod
+    def add_prediction(prediction_data, prediction_type):
+        try:
+            doc_ref = database.collection(prediction_type).add(prediction_data)
+            return json.dumps({"Success": "Prediction added successfully"})
+        except Exception as e:
+            return json.dumps({"error": str(e)})
+    
+    @staticmethod
+    def upload_image(filename):
 
+        unique_filename = f"img{int(time.time() * 1000)}"
+        blob = bucket.blob(unique_filename)
+        with open(filename, "rb") as image_file:
+            blob.upload_from_file(image_file, content_type='image/png')
+        return blob.public_url
+    
+    @staticmethod
+    def delete_img(filename):
+        blob = bucket.blob(filename)
+        blob.delete()
 
+    @staticmethod
+    def save_average_data(avg_data, user_token):
+        if user_token != 'none':
+            database.collection(f'daily_averages-{user_token}').add(avg_data)
 
+    @staticmethod
+    def get_average_data(user_token):
+        averages_ref = database.collection(f'daily_averages-{user_token}')
+        docs = averages_ref.stream()
+        averages = []
+        for doc in docs:
+            avg_data = doc.to_dict()
+            avg_data['id'] = doc.id
+            averages.append(avg_data)
+        
+        return averages

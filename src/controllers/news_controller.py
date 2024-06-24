@@ -50,4 +50,4 @@ class AgricultureNewsResource(Resource):
             return jsonify({"error": str(e)}), 500
         
 
-api.add_namespace(ns_agriculture_news, path='/agriculture-news')
+api.add_namespace(ns_agriculture_news, path='/agriculture_news')

@@ -1,17 +1,18 @@
-from flask import jsonify, render_template, request
+from flask import jsonify, request
 import threading
 from datetime import datetime
 import atexit
 import requests
-from apscheduler.schedulers.background import BackgroundScheduler
 from src.models.chat import Chat
 from src.auth.auth import login_required
-from src import logging, web_api, database, db, api, Resource, fields
+from src import logging, web_api, db, api, Resource, fields, scheduler
+from src.models.firebase import Firebase
 
 user_token = web_api.config["AUTH_TOKEN"]
 
 ns_soil_data = api.namespace('get_soil_data', description='Soil data from IoT device readings')
 ns_soil_analysis = api.namespace('soil_analysis', description='Soil Analysis from IoT device data')
+ns_daily_averages = api.namespace('daily_averages', description='Daily averages for the current user')
 
 # Define the models for Swagger documentation
 soil_data_model = api.model('SoilData', {
@@ -25,7 +26,29 @@ analysis_response_model = api.model('AnalysisResponse', {
     'analysis': fields.String(description='Analysis of soil data')
 })
 
+average_data_model = api.model('AverageData', {
+    'timestamp': fields.DateTime(description='Timestamp of the average data'),
+    'mois': fields.Float(description='Average moisture data'),
+    'npk': fields.String(description='Average NPK data'),
+    'temp': fields.Float(description='Average temperature data'),
+    'ph': fields.Float(description='Average pH data')
+})
+
+averages_list_model = api.model('AveragesList', {
+    'averages': fields.List(fields.Nested(average_data_model), description='List of daily averages')
+})
+
+
 # Store the accumulated data
+# TODO: In-Memory Data Store with Persistent Backup or Caching with Disk-based Cache
+'''
+Use an in-memory data structure like a dictionary and periodically back it up to a 
+file (e.g., JSON) to persist data across restarts.
+Caching with Disk-based Cache:
+Use a caching library like diskcache, which stores data in 
+memory with an option to spill over to disk, providing both speed and persistence.
+
+'''
 accumulated_data = {
     'mois': [],
     'ph': [],
@@ -108,7 +131,7 @@ def save_daily_average():
                 logging.info(f"Saved pH average: {avg_ph}")
             if avg_data:
                 avg_data['timestamp'] = datetime.now()
-                database.collection(f'daily_averages-{user_token}').add(avg_data)
+                Firebase.save_average_data(avg_data, user_token=web_api.config["AUTH_TOKEN"])
                 logging.debug("Saved daily averages")
             # Clear the accumulated data for the next day
             accumulated_data['mois'].clear()
@@ -116,12 +139,9 @@ def save_daily_average():
             accumulated_data['ph'].clear()
             accumulated_data['temp'].clear()
             logging.debug("Cleared accumulated data for the next day.")
+
         except Exception as e:
             logging.error(f"Error in save_daily_average: {e}")
-
-# Schedule the save_daily_average function to run at midnight
-scheduler = BackgroundScheduler()
-#TODO: Verify if this is for a single user or throughout the app
 
 if scheduler.running:
     # Ensure the scheduler shuts down when the app exits
@@ -134,11 +154,13 @@ class SoilDataResource(Resource):
     @ns_soil_data.response(200, 'Success', [soil_data_model])
     @ns_soil_data.doc(security='Bearer Auth')
     def get(self):
+
         with data_lock:
             mois_data = accumulated_data['mois'][-1] if accumulated_data['mois'] else None
             npk_data = accumulated_data['npk'][-1] if accumulated_data['npk'] else None
             temp_data = accumulated_data['temp'][-1] if accumulated_data['temp'] else None
             ph_data = accumulated_data['ph'][-1] if accumulated_data['ph'] else None
+
             return jsonify({
                 "mois": mois_data,
                 "npk": npk_data,
@@ -152,30 +174,44 @@ class SoilAnalysisResource(Resource):
     @ns_soil_analysis.response(200, 'Success', [analysis_response_model])
     @ns_soil_data.doc(security='Bearer Auth')
     def get(self):
+
         user_token = web_api.config["AUTH_TOKEN"]
         get_data_response = requests.get(f'{request.url_root}/get_soil_data', headers={"Authorization": f"Bearer {user_token}"})
-        
+
         if get_data_response.status_code != 200:
             return jsonify({"error": "Failed to retrieve data"}), 500
         
         data = get_data_response.json()
-        
         analysis = Chat.soil_analysis(data)
-        
         return jsonify({"analysis": analysis.strip()})
 
-# Serve the HTML file
-@web_api.route('/test')
-@login_required
-def test():
-    return render_template('index.html.j2')
+@ns_daily_averages.route('/')
+class DailyAveragesResource(Resource):
+    @login_required
+    @ns_daily_averages.response(200, 'Success', averages_list_model)
+    @ns_daily_averages.doc(security='Bearer Auth')
+    def get(self):
+
+        user_token = web_api.config["AUTH_TOKEN"]
+        try:
+            averages = Firebase.get_average_data(user_token)
+            return jsonify({'averages': averages})
+        except Exception as e:
+            logging.error(f"Error fetching daily averages: {e}")
+            return jsonify({"error": "Failed to retrieve daily averages"}), 500
 
 # Start watching the database as soon as log in is successful
 def start_transfer():
+
     try:
         transfer_thread = threading.Thread(target=watch_realtime_db)
         transfer_thread.daemon = True
         transfer_thread.start()
         logging.info("Transfer started")
+
     except Exception as e:
         logging.error(f"Error in start_transfer: {e}")
+
+api.add_namespace(ns_daily_averages, path='/daily_averages')
+api.add_namespace(ns_soil_analysis, path='/soil_analysis')
+api.add_namespace(ns_soil_data, path='/get_soil_data')

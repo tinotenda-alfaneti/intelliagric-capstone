@@ -32,9 +32,9 @@ class LoginResource(Resource):
             return response
         
         web_api.config["AUTH_TOKEN"] = token
-        # scheduler.add_job(func=save_daily_average, trigger='cron', hour=0, minute=0)
+        scheduler.add_job(func=save_daily_average, trigger='cron', hour=1, minute=0)
         # uncomment for testing
-        scheduler.add_job(func=save_daily_average, trigger='interval', seconds=60)
+        # scheduler.add_job(func=save_daily_average, trigger='interval', seconds=60)
         if scheduler.running == False:
             scheduler.start()
         start_transfer()

@@ -15,6 +15,9 @@ import logging
 from newsapi import NewsApiClient
 from src.Config.config import Config
 
+from twilio.rest import Client
+
+from apscheduler.schedulers.background import BackgroundScheduler
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
@@ -65,6 +68,9 @@ WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')
 NEWS_API_KEY = os.getenv('NEWS_API_KEY')
 GNEWS_API_KEY = os.getenv('GNEWS_API_KEY')
 KINDWISE_API_KEY = os.getenv('KINDWISE_API_KEY')
+TWILIO_SID=os.getenv('TWILIO_SID')
+TWILIO_AUTH=os.getenv('TWILIO_AUTH')
+TWILIO_NUM=os.getenv('TWILIO_NUM')
 
 # Configure Firebase
 cred = credentials.Certificate({
@@ -86,4 +92,6 @@ bucket = storage.bucket()
 database = firestore.client()
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 newsapi = NewsApiClient(api_key=NEWS_API_KEY)
+scheduler = BackgroundScheduler()
+twilio_client = Client(TWILIO_SID, TWILIO_AUTH)
 from src.controllers import *

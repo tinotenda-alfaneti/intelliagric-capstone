@@ -21,17 +21,5 @@ The web app will be open on http://127.0.0.1:5000
 
 `pytest --html=report.html --cov=src --cov-report=html`
 
-## Example test for frontend of protected endpoints
-```
-// Example using fetch in JavaScript
-const idToken = await firebase.auth().currentUser.getIdToken(true);
-const response = await fetch('/get-soil-data', {
-    method: 'GET',
-    headers: {
-        'Authorization': `Bearer ${idToken}`
-    }
-});
-const data = await response.json();
-```
 
 

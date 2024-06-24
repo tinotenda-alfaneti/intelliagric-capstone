@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import requests
-import requests
+import json
 import datetime
 import pandas as pd 
 from src import HF_TOKEN
@@ -46,10 +46,12 @@ class Predict:
         probability = highest_prob['score']
 
         if probability < 0.6 and label.lower() in ["nofoliarsymptoms","unidentifieddisease"]:
-            return API.identify([filename])
+            identification = API.identify([filename])
+            best_suggestion = max(identification['result']['disease']['suggestions'], key=lambda x: x['probability'])['name']
+            return {"disease": best_suggestion, "detailed_info": json.dumps(identification)}
         
         # Format the string with the label and probability
-        output = {"model": "disease prediction", "disease_probability": f"{probability:.3f}", "crop": "maize", "recommendations": []}
+        output = {"model": "disease prediction", "disease":f"{label}", "disease_probability": f"{probability:.3f}", "crop": "maize", "recommendations": []}
         # result = f"With {probability:.3f} probability, the disease is {label}."
         return output
     

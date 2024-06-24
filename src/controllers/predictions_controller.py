@@ -6,6 +6,7 @@ from flask import request, session, jsonify, make_response
 from src.models.predictions import Predict
 from src.models.chat import CHAT_PROMPT
 from src.models.chat import Chat
+from src.models.data_collection import DataCollection
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -41,6 +42,9 @@ class PredictDiseaseResource(Resource):
         model_response = Predict.maize_disease_prediction(crop_img)
         refined_response = Chat.refine_response(user_input, model_response)
 
+        # add prediction to database for verification and APIs
+        DataCollection.save_disease_prediction(crop_img, refined_response, model_response["disease"])
+
         # refined response structure:  {"refined": "disease prediction", "message": "There is an 80% chance that your tomato crop may"}
         session['conversation_history'].append({"role": "assistant", "content": refined_response})
         final_response = {'intent': 'predict maize disease', 'message': refined_response}
@@ -64,6 +68,8 @@ class PredictMarketResource(Resource):
         
         market_response = Predict.market_prediction(user_data)
         refined_response = Chat.refine_response(user_input, market_response)
+
+        DataCollection.save_market_prediction(user_data["area"], user_data["item"], refined_response)
 
         # refined response structure: {"refined": "market prediction", "message": "The predicted supply of maize in Nigeria is high compared to the average of the past 16 years."}
         session['conversation_history'].append({"role": "assistant", "content": refined_response})

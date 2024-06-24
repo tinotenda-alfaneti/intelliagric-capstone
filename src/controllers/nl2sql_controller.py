@@ -59,7 +59,7 @@ class EcommerceQueryResource(Resource):
         """Handles natural language to SQL queries for the ecommerce database."""
 
         if 'conversation_history' not in session:
-            session['conversation_history'] = []
+            session['conversation_history'] = CHAT_PROMPT
 
         data = request.get_json()
         message = data.get('message')
@@ -72,7 +72,7 @@ class EcommerceQueryResource(Resource):
             query = generate_query.invoke({"question": message})
             # Execute the SQL query
             result = execute_query.invoke(query)
-            response = rephrase_answer.invoke({"question": message, "query": query['query'], "result": result})
+            response = rephrase_answer.invoke({"question": message, "query": query, "result": result})
             logging.info(f"Response: {response}")
 
             session['conversation_history'].append({"role": "assistant", "content": response})

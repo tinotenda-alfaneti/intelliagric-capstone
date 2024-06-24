@@ -23,7 +23,7 @@ class TestEcommerceQueryResource(unittest.TestCase):
     @patch('src.controllers.nl2sql_controller.rephrase_answer')
     def test_post_success(self, mock_rephrase_answer, mock_execute_query, mock_generate_query):
         # Setup Mocks
-        mock_generate_query.invoke.return_value = {'query': 'SELECT * FROM employees WHERE department = "Sales";'}
+        mock_generate_query.invoke.return_value = 'SELECT * FROM employees WHERE department = "Sales";'
         mock_execute_query.invoke.return_value = [{'name': 'John Doe', 'department': 'Sales'}]
         mock_rephrase_answer.invoke.return_value = 'John Doe works in the Sales department.'
 

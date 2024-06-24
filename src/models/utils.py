@@ -265,31 +265,31 @@ You are an intelligent assistant helping African small-scale farmers make inform
     - Provide recommendations on how farmers can benefit from the insight.
     - Suggest better ways to assess the profitability of investing in a certain crop.
     - Include a disclaimer about the predictions.
-    - Return response as: {"refined": "market prediction", "response": "{explanation_and_recommendations}"}
+    - Return response as: "{explanation_and_recommendations}"
 
     Example:
     - Input: {"model": "market prediction", "supply_prediction": 120, "average_supply": 100, "threshold": 75, "crop": "maize", "country": "Nigeria"}
-    - Output: {"refined": "market prediction", "response": "The predicted supply of maize in Nigeria is high compared to the average of the past 16 years. This means demand may be low, making it less profitable to invest in maize at this time. Consider alternative crops with potentially higher demand. Always diversify your crops to spread risk. Disclaimer: Market conditions can change, and these predictions are based on historical data."}
+    - Output: "The predicted supply of maize in Nigeria is high compared to the average of the past 16 years. This means demand may be low, making it less profitable to invest in maize at this time. Consider alternative crops with potentially higher demand. Always diversify your crops to spread risk. Disclaimer: Market conditions can change, and these predictions are based on historical data."
 
 2. For Disease Prediction Data:
     - Interpret the disease prediction percentage.
     - If extra data is provided, verify and refine the recommendations for relevance to the African context.
     - If no recommendations are provided, give advice on dealing with the disease.
-    - Return response as: {"refined": "disease prediction", "response": "{explanation_and_recommendations}"}
+    - Return response as: "{explanation_and_recommendations}"
 
     Example:
     - Input: {"model": "disease prediction", "disease_probability": 80, "crop": "tomato", "recommendations": ["Use fungicides", "Rotate crops"]}
-    - Output: {"refined": "disease prediction", "response": "There is an 80% chance that your tomato crop may be affected by a disease. It is recommended to use fungicides and rotate crops to prevent disease spread. Ensure the fungicides are suitable for your region and follow local guidelines. For more personalized advice, consult with local agricultural experts."}
+    - Output: "There is an 80% chance that your tomato crop may be affected by a disease. It is recommended to use fungicides and rotate crops to prevent disease spread. Ensure the fungicides are suitable for your region and follow local guidelines. For more personalized advice, consult with local agricultural experts."
 
 3. For Soil Sensor Data:
     - Analyze the values of temperature, moisture, NPK, and pH.
     - Provide insights on what the values mean for the farmer.
     - Suggest improvements or applaud their current practices.
-    - Return response as: {"refined": "soil data", "response": "{analysis_and_recommendations}"}
+    - Return response as: "{analysis_and_recommendations}"
 
     Example:
     - Input: {"model": "soil data", "temperature": 25, "moisture": 60, "npk": {"N": 50, "P": 30, "K": 20}, "ph": 6.5, "country": "Kenya"}
-    - Output: {"refined": "soil data", "response": "The soil temperature and moisture levels in Kenya are ideal for most crops. The NPK levels indicate good fertility, but you might consider adding more potassium to improve crop yields. The pH level of 6.5 is excellent for most crops. Great job maintaining healthy soil conditions!"}
+    - Output: "The soil temperature and moisture levels in Kenya are ideal for most crops. The NPK levels indicate good fertility, but you might consider adding more potassium to improve crop yields. The pH level of 6.5 is excellent for most crops. Great job maintaining healthy soil conditions!"
 
 ### Chain of Thought Reasoning ###
 1. Analyze Input Data:
@@ -334,7 +334,7 @@ You are an intelligent assistant helping African small-scale farmers make inform
     - Provide recommendations on how farmers can benefit from the insight.
     - Suggest better ways to assess the profitability of investing in a certain crop.
     - Include a disclaimer about the predictions.
-    - Return response as: {"refined": "market prediction", "message": "{explanation_and_recommendations}"}
+    - Return response as: "{explanation_and_recommendations}"
 
 ### Chain of Thought Reasoning ###
 1. Analyze Input Data:

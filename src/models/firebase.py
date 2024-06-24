@@ -22,19 +22,7 @@ class Firebase:
             return farm_info
         else:
             return {'error': 'Farm not found'}
-
-    @staticmethod
-    def link_device_to_user(uid, serial_number, device_type):
-        try:
-            device_ref = database.collection(f'{device_type}_devices').document(serial_number)
-            device_ref.set({
-                'farmer_id': uid,
-                'device_type': device_type
-            }, merge=True)
-            return json.dumps({"Success": "Device linked to user successfully"})
-        except Exception as e:
-            return json.dumps({"error": str(e)})
-    
+        
     @staticmethod
     def add_farm(farm_data):
         try:
@@ -43,12 +31,41 @@ class Firebase:
             return json.dumps({"Success": "Farm added successfully"})
         except Exception as e:
             return json.dumps({"error": str(e)})
-    
+
+    @staticmethod
+    def link_device_to_user(uid, serial_number, device_type):
+        try:
+            device_ref = database.collection(f'{device_type}_devices').document(serial_number)
+            device = device_ref.get()
+
+            if not device.exists:
+                return json.dumps({"error": "Device serial number does not exist"})
+
+            device_data = device.to_dict()
+            if 'farmer_id' in device_data and device_data['farmer_id']:
+                return json.dumps({"error": "Device already linked to a farmer"})
+
+            device_ref.set({
+                'farmer_id': uid,
+                'device_type': device_type
+            }, merge=True)
+            return json.dumps({"Success": "Device linked to user successfully"})
+        except Exception as e:
+            return json.dumps({"error": str(e)})
+
     @staticmethod
     def add_device_serial(uid, iot_device_serial):
         try:
-            ref = db.reference(f'iot/{uid}')
-            ref.set({'serialnum': iot_device_serial})
+            ref = db.reference('iot/')
+            all_devices = ref.get()
+
+            if all_devices:
+                for key, value in all_devices.items():
+                    if value.get('serialnum') == iot_device_serial:
+                        return json.dumps({"error": "Serial number already associated with another device"})
+
+            user_ref = ref.child(uid)
+            user_ref.set({'serialnum': iot_device_serial})
             return json.dumps({"Success": "Device serial added successfully"})
         except Exception as e:
             return json.dumps({"error": str(e)})
@@ -66,6 +83,8 @@ class Firebase:
     @staticmethod
     def retrieve_saved_chats():
         try:
+            if not web_api.config["AUTH_TOKEN"]:
+                raise Exception("Auth token not found")
             db = database.collection(f'history-{web_api.config["AUTH_TOKEN"]}')
             messages = db.stream()
             message_list = []

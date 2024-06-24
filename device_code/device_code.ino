@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <ArduinoOTA.h>
 #include <WiFi.h>
 #include <DHT.h>
 #include <Firebase_ESP_Client.h>
@@ -7,14 +8,12 @@
 #include <ArduinoJson.h>
 #include <Preferences.h>
 #include <LiquidCrystal_I2C.h>
-// Provide the token generation process info.
 #include "addons/TokenHelper.h"
-// Provide the RTDB payload printing info
 #include "addons/RTDBHelper.h"
 
-#include "config.h" // Contains WIFI_SSID, WIFI_PASSWORD, API_KEY, DATABASE_URL, and PROJECT_ID
+#include "config.h" /* Contains WIFI_SSID, WIFI_PASSWORD, API_KEY, DATABASE_URL, and PROJECT_ID */
 
-#define MOIS_PIN 34 // ESP32 pin GPIO34 (ADC0) that connects to AOUT pin of moisture sensor
+#define MOIS_PIN 34 
 #define TEMP_PIN  17
 #define DHT11_PIN 14
 #define uS_TO_S_FACTOR 1000000ULL  /* Conversion factor for microseconds to seconds */
@@ -24,14 +23,13 @@
 
 RTC_DATA_ATTR String farmerId;
 
-// Define Firebase Data object
-FirebaseData fbdo;
-
+FirebaseData fbdo; /* Define Firebase Data object */
 FirebaseAuth auth;
 FirebaseConfig config;
 bool signupOK = false;
 
 Preferences preferences;
+
 DHT dht11(DHT11_PIN, DHT11);
 
 float soilTemp;
@@ -48,12 +46,13 @@ OneWire oneWire(TEMP_PIN);
 DallasTemperature DS18B20(&oneWire);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
+/********** SETUP **********/
 void setup(){
   Serial.begin(115200);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   DS18B20.begin();
   dht11.begin();
-  lcd.init(); // initialize the lcd
+  lcd.init(); 
   lcd.backlight();
 
   Serial.print("Connecting to Wi-Fi");
@@ -66,13 +65,16 @@ void setup(){
   Serial.println(WiFi.localIP());
   Serial.println();
 
+  ArduinoOTA.setHostname(SERIAL_NUM);
+  ArduinoOTA.setPassword(OTA_PASSWORD);
+  ArduinoOTA.begin();
+
   pinMode(BUILTIN_LED, OUTPUT);
   
   config.api_key = API_KEY;
   config.database_url = DATABASE_URL;
   auth.user.email = USER_EMAIL;
   auth.user.password = USER_PASSWORD;
-  // Assign the callback function for the long running token generation task
   config.token_status_callback = tokenStatusCallback;
 
   Firebase.begin(&config, &auth);
@@ -81,8 +83,9 @@ void setup(){
     signupOK = true;
     }
 
-  preferences.begin("config", false); // Open preferences with "config" namespace, RW access
+  preferences.begin("config", false); /* Open preferences with "config" namespace, RW access */
   farmerId = preferences.getString("farmerId", "");
+  farmerId = ""; /* to comment out during deployment */
   if (farmerId == "") {
     farmerId = getFarmerId(SERIAL_NUM);
     preferences.putString("farmerId", farmerId);
@@ -92,32 +95,30 @@ void setup(){
     } else {
       Serial.println("Failed to get farmer ID");
     }
-  } else {
-    Serial.println("Failed to get farmer ID");
   }
 
-  // Setup ESP32 to wake up after
-  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
+  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR); /* Setup ESP32 to wake up after */
 }
 
+/********** LOOP **********/
 void loop() {
+
+  ArduinoOTA.handle();
 
   lcdScreenControl();
 
-  // Put your main code here, to run repeatedly
   if (Firebase.ready()){
-    DS18B20.requestTemperatures();       // Send the command to get temperatures
+    DS18B20.requestTemperatures();
     
     soilTemp = DS18B20.getTempCByIndex(0);  // Read temperature in °C
     soilMois = analogRead(MOIS_PIN); // Moisture sensor
     pH = 7; // dummy Soil pH
     npk = "7-14-7"; // dummy Soil NPK
-    humi  = dht11.readHumidity();
-    tempC = dht11.readTemperature();
+    humi  = dht11.readHumidity(); // humidity reading
+    tempC = dht11.readTemperature(); // temp in degrees
 
     String basePath = "iot/" + farmerId;
 
-    // Write NPK to the database path device/npk
     if (Firebase.RTDB.setString(&fbdo, basePath + "/npk", npk)){
       Serial.print("NPK SENT ");
       Serial.println(npk);
@@ -126,7 +127,6 @@ void loop() {
       Serial.println("REASON: " + fbdo.errorReason());
     }
 
-    // Write temperature to the database path device/temp
     if (Firebase.RTDB.setFloat(&fbdo, basePath + "/temp", soilTemp)){
       Serial.print("TEMP SENT ");
       Serial.println(soilTemp);
@@ -135,7 +135,6 @@ void loop() {
       Serial.println("REASON: " + fbdo.errorReason());
     }
 
-    // Write soil moisture to the database path device/mois
     if (Firebase.RTDB.setInt(&fbdo, basePath + "/mois", soilMois)){
       Serial.print("MOIS SENT ");
       Serial.println(soilMois);
@@ -144,7 +143,6 @@ void loop() {
       Serial.println("REASON: " + fbdo.errorReason());
     }
 
-    // Write soil pH to the database path device/ph
     if (Firebase.RTDB.setInt(&fbdo, basePath + "/ph", pH)){
       Serial.print("PH SENT ");
       Serial.println(pH);
@@ -153,7 +151,6 @@ void loop() {
       Serial.println("REASON: " + fbdo.errorReason());
     }
 
-    // Write air humidity
     if (Firebase.RTDB.setFloat(&fbdo, basePath + "/humidity", humi)){
       Serial.print("HUMI SENT ");
       Serial.println(humi);
@@ -162,7 +159,6 @@ void loop() {
       Serial.println("REASON: " + fbdo.errorReason());
     }
 
-    // Write air temp
     if (Firebase.RTDB.setFloat(&fbdo, basePath + "/air-temp", tempC)){
       Serial.print("AIR TEMP SENT ");
       Serial.println(tempC);
@@ -171,8 +167,7 @@ void loop() {
       Serial.println("REASON: " + fbdo.errorReason());
     }
 
-    // sleep after perfoming routine
-    esp_light_sleep_start();
+    esp_light_sleep_start(); /* sleep after perfoming  */
   }
 }
 
@@ -180,10 +175,8 @@ String getFarmerId(const char* serialNumber) {
 
   String documentPath = "iot_devices/" + String(SERIAL_NUM);
 
-  // Fetch the document
   if (Firebase.Firestore.getDocument(&fbdo, PROJECT_ID, "", documentPath.c_str())) {
     if (fbdo.httpCode() == 200) {
-      // Parse the JSON response
       DynamicJsonDocument doc(1024);
       deserializeJson(doc, fbdo.payload());
       JsonObject fields = doc["fields"];
@@ -198,41 +191,39 @@ String getFarmerId(const char* serialNumber) {
   return "";
 }
 
-//update readings values
 void lcdScreenControl() {
+  
   humi  = dht11.readHumidity();
   tempC = dht11.readTemperature();
 
-  // Calculate the time difference since the last update
   unsigned long timeDiff = millis() - lastUpdate;
 
-  // Rotate the display every 6 seconds
   if (timeDiff > 3000) {
-    displayMode = (displayMode + 1) % 2; // Rotate between 0, 1, and 2
-    lastUpdate = millis(); // Update the last update time
-    lcd.clear(); // Clear the display for new content
+    displayMode = (displayMode + 1) % 2; // Rotate between 0, 1
+    lastUpdate = millis(); 
+    lcd.clear();
   }
 
   // Display based on the current mode
   switch (displayMode) {
-    case 0: // Display temperature and LDR
+    case 0: 
       lcd.setCursor(0, 0);
-      lcd.print("A-Temp:");
-      lcd.setCursor(8, 0); 
+      lcd.print("AirTemp:");
+      lcd.setCursor(10, 0); 
       lcd.print(tempC);
       lcd.setCursor(0, 1);
-      lcd.print("S-Temp:");
-      lcd.setCursor(8, 1);
+      lcd.print("SoilTemp:");
+      lcd.setCursor(10, 1);
       lcd.print(soilTemp);
       break;
-    case 1: // Display humidity
+    case 1: 
       lcd.setCursor(0, 0);
       lcd.print("Humid:");
-      lcd.setCursor(6, 0); 
+      lcd.setCursor(7, 0); 
       lcd.print(humi);
        lcd.setCursor(0, 1);
-      lcd.print("Mois:");
-      lcd.setCursor(6, 1);
+      lcd.print("Moist:");
+      lcd.setCursor(7, 1);
       lcd.print(soilMois);
       break;
   }

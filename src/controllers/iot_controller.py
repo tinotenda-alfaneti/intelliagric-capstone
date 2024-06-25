@@ -5,14 +5,16 @@ import atexit
 import requests
 from src.models.chat import Chat
 from src.auth.auth import login_required
-from src import logging, web_api, db, api, Resource, fields, scheduler
+from src import logging, web_api, db, api, Resource, fields, scheduler, bucket
 from src.models.firebase import Firebase
+from src.models.utils import API
 
 user_token = web_api.config["AUTH_TOKEN"]
 
 ns_soil_data = api.namespace('get_soil_data', description='Soil data from IoT device readings')
 ns_soil_analysis = api.namespace('soil_analysis', description='Soil Analysis from IoT device data')
 ns_daily_averages = api.namespace('daily_averages', description='Daily averages for the current user')
+ns_drone_image_analysis = api.namespace('drone_image_analysis', description='Drone Image Analysis from captured images')
 
 # Define the models for Swagger documentation
 soil_data_model = api.model('SoilData', {
@@ -36,6 +38,10 @@ average_data_model = api.model('AverageData', {
 
 averages_list_model = api.model('AveragesList', {
     'averages': fields.List(fields.Nested(average_data_model), description='List of daily averages')
+})
+
+image_analysis_response_model = api.model('ImageAnalysisResponse', {
+    'analysis': fields.String(description='Analysis of drone images')
 })
 
 
@@ -199,6 +205,35 @@ class DailyAveragesResource(Resource):
         except Exception as e:
             logging.error(f"Error fetching daily averages: {e}")
             return jsonify({"error": "Failed to retrieve daily averages"}), 500
+        
+@ns_drone_image_analysis.route('/')
+class DroneImageAnalysisResource(Resource):
+    @login_required
+    @ns_drone_image_analysis.response(200, 'Success', [image_analysis_response_model])
+    @ns_drone_image_analysis.doc(security='Bearer Auth')
+    def get(self):
+        user_token = web_api.config["AUTH_TOKEN"]
+
+        try:
+
+            # List all image files in the specified path
+            blobs = bucket.list_blobs(prefix=f'drone_images/{user_token}/')
+
+            image_urls = []
+            for blob in blobs:
+                image_url = blob.public_url
+                image_urls.append(image_url)
+
+            if not image_urls:
+                return jsonify({"error": "No images found for analysis"}), 404
+
+            analysis_response = API.identify(image_urls)
+
+            return jsonify({"analysis": analysis_response})
+        
+        except Exception as e:
+            logging.error(f"Error in DroneImageAnalysisResource: {e}")
+            return jsonify({"error": "Failed to retrieve and analyze images"}), 500
 
 # Start watching the database as soon as log in is successful
 def start_transfer():
@@ -215,3 +250,4 @@ def start_transfer():
 api.add_namespace(ns_daily_averages, path='/daily_averages')
 api.add_namespace(ns_soil_analysis, path='/soil_analysis')
 api.add_namespace(ns_soil_data, path='/get_soil_data')
+api.add_namespace(ns_drone_image_analysis, path='/drone_image_analysis')

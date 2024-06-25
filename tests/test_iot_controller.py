@@ -82,7 +82,7 @@ class TestSoilDataSystem(BaseTestCase):
 
 
     @patch('src.controllers.iot_controller.scheduler')
-    @patch('src.controllers.iot_controller.database.collection')
+    @patch('src.models.firebase.database.collection')
     def test_save_daily_average_job(self, mock_database_collection, mock_scheduler):
         # Mocking the scheduler and datetime to simulate midnight execution
         mock_scheduler.running = True

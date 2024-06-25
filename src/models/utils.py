@@ -22,6 +22,13 @@ YEAR = datetime.date.today().year
 def encode_file(file_name):
     with open(file_name, "rb") as file:
         return base64.b64encode(file.read()).decode("ascii")
+    
+def encode_file_url(image_url):
+    response = requests.get(image_url)
+    if response.status_code == 200:
+        return base64.b64encode(response.content).decode("ascii")
+    else:
+        raise Exception("Failed to download image")
 
 class API:
 
@@ -115,10 +122,15 @@ class API:
             return 'Weather data not available' 
 
     @staticmethod
-    def identify(file_names):
+    def identify(file_names, flag=1):
+
+        if flag == 0:
+            images = [encode_file_url(img) for img in file_names]
+        else:
+            images = [encode_file(img) for img in file_names]
    
         payload = {
-            "images": [encode_file(img) for img in file_names],
+            "images": images,
             "similar_images": True,
             #TODO: add lat and lon coordinates here
             # "latitude": lat,

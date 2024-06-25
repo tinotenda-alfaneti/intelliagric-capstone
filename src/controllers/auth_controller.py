@@ -1,5 +1,5 @@
 import json
-from src import api, web_api
+from src import api, web_api, logging
 from flask import request, jsonify, session
 from flask_restx import Api, Resource, fields
 from src.auth.auth import verify_id_token

@@ -1,3 +1,4 @@
+import json
 from flask import jsonify, request
 import threading
 from datetime import datetime
@@ -216,7 +217,6 @@ class DroneImageAnalysisResource(Resource):
 
         try:
 
-            # List all image files in the specified path
             blobs = bucket.list_blobs(prefix=f'drone_images/{user_token}/')
 
             image_urls = []
@@ -227,9 +227,14 @@ class DroneImageAnalysisResource(Resource):
             if not image_urls:
                 return jsonify({"error": "No images found for analysis"}), 404
 
-            analysis_response = API.identify(image_urls)
+            user_input = "These are images from the drone as it was capturing images around the farm. Please provide an analysis and recommendation on whether I should watch out for any potential diseases. "
+            identification = API.identify(image_urls, flag=0)
+            best_suggestion = max(identification['result']['disease']['suggestions'], key=lambda x: x['probability'])['name']
+            analysis_response =  {"disease": best_suggestion, "detailed_info": json.dumps(identification)}
 
-            return jsonify({"analysis": analysis_response})
+            refined_response = Chat.refine_response(user_input, analysis_response)
+
+            return jsonify({"analysis": refined_response})
         
         except Exception as e:
             logging.error(f"Error in DroneImageAnalysisResource: {e}")

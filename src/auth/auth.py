@@ -3,6 +3,9 @@ from src import logging
 from firebase_admin import auth
 from functools import wraps
 from flask import request, jsonify
+from src.models.iot_service import save_daily_average, start_transfer, scheduler
+from src.controllers.utils import state
+from src import web_api
 
 # Initialize logging
 logging.basicConfig(level=logging.DEBUG)
@@ -13,6 +16,7 @@ def verify_id_token(uid):
     try:
         user = auth.get_user(uid)
         logging.info(f"Verification for {user} successful")
+        login_routine(uid, state)
         return user
     except Exception as e:
         logging.error(f"Verification failed {e}")
@@ -39,4 +43,17 @@ def login_required(f):
 
         return f(*args, **kwargs)
     return decorated_function
-    
+
+def login_routine(token, state):
+
+    web_api.config["AUTH_TOKEN"] = token
+
+    if not state.scheduler_started:
+        # scheduler.add_job(func=save_daily_average, trigger='cron', hour=1, minute=0)
+        # Uncomment for testing
+        scheduler.add_job(func=save_daily_average, trigger='interval', seconds=60)
+        scheduler.start()
+        state.scheduler_started = True
+
+    if not state.transfer_started:
+        start_transfer(state)

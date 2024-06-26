@@ -1,9 +1,7 @@
-import json
-from src import api, web_api, logging
+from src import api, web_api
 from flask import request, jsonify, session
-from flask_restx import Api, Resource, fields
-from src.auth.auth import verify_id_token
-from src.controllers.iot_controller import save_daily_average, start_transfer, scheduler
+from flask_restx import Resource, fields
+from src.auth.auth import verify_id_token, state
 
 
 ns_auth = api.namespace('auth', description='Authentication')
@@ -30,14 +28,6 @@ class LoginResource(Resource):
             response = jsonify({"error": "Invalid token"})
             response.status_code = 401
             return response
-        
-        web_api.config["AUTH_TOKEN"] = token
-        # scheduler.add_job(func=save_daily_average, trigger='cron', hour=1, minute=0)
-        # uncomment for testing
-        scheduler.add_job(func=save_daily_average, trigger='interval', seconds=60)
-        if scheduler.running == False:
-            scheduler.start()
-        start_transfer()
 
         response = jsonify({"success": "Login successful"})
         response.status_code = 200
@@ -48,6 +38,8 @@ class LogoutResource(Resource):
     def post(self):
         '''Logout controller'''
         web_api.config["AUTH_TOKEN"] = 'none'
+        state.scheduler_started = False
+        state.transfer_started = False
         session.clear()
         response = jsonify({"success": "Logout successful"})
         response.status_code = 200

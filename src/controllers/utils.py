@@ -69,3 +69,11 @@ def handle_options():
     response.headers.add("Access-Control-Allow-Credentials", "true")
     response.status_code = 200
     return response
+
+
+class State:
+    def __init__(self):
+        self.transfer_started = False
+        self.scheduler_started = False
+
+state = State()

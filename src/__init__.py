@@ -71,6 +71,10 @@ KINDWISE_API_KEY = os.getenv('KINDWISE_API_KEY')
 TWILIO_SID=os.getenv('TWILIO_SID')
 TWILIO_AUTH=os.getenv('TWILIO_AUTH')
 TWILIO_NUM=os.getenv('TWILIO_NUM')
+DB_USER=os.getenv('DB_USER')
+DB_HOST=os.getenv('DB_HOST')
+DB_PASSWORD=os.getenv('DB_PASSWORD')
+DB_NAME=os.getenv('DB_NAME')
 
 # Configure Firebase
 cred = credentials.Certificate({

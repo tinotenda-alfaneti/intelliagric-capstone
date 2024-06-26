@@ -6,22 +6,23 @@ from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from src.controllers.chat_controller import session
-from src import ORIGIN_URL, OPENAI_API_KEY, api, Resource, fields, logging, web_api
+from src import OPENAI_API_KEY, api, Resource, fields, logging, DB_HOST, DB_NAME, DB_PASSWORD, DB_USER
 from src.controllers.error_controller import handle_errors
 from src.models.chat import CHAT_PROMPT
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-db_user = web_api.config["DB_USER"]
-db_password = web_api.config["DB_PASSWORD"]
-db_host = web_api.config["DB_HOST"]
-db_name = web_api.config["DB_NAME"]
+db_user = DB_USER
+db_password = DB_PASSWORD
+db_host = DB_HOST
+db_name = DB_NAME
 MODEL = "gpt-3.5-turbo"
 
 try:
     # Connect to SQL Database
     db = SQLDatabase.from_uri(f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}")
+    # db = SQLDatabase.from_uri(f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}")
 
     llm = ChatOpenAI(model=MODEL, temperature=0, openai_api_key=OPENAI_API_KEY)
     generate_query = create_sql_query_chain(llm, db)

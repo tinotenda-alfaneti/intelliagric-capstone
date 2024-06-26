@@ -3,6 +3,7 @@ import json
 import numpy as np
 import logging
 from flask import request, session, jsonify, make_response
+from src.controllers.error_controller import handle_errors
 from src.models.predictions import Predict
 from src.models.chat import CHAT_PROMPT
 from src.models.chat import Chat
@@ -28,6 +29,7 @@ predict_market_model = api.model('PredictMarket', {
 
 @ns_predict_disease.route('/')
 class PredictDiseaseResource(Resource):
+    @handle_errors
     @ns_predict_disease.expect(predict_disease_model)
     @ns_predict_disease.response(200, 'Success')
     def post(self):
@@ -52,6 +54,7 @@ class PredictDiseaseResource(Resource):
 
 @ns_predict_market.route('/')
 class PredictMarketResource(Resource):
+    @handle_errors
     @ns_predict_market.expect(predict_market_model)
     @ns_predict_market.response(200, 'Success')
     def post(self):

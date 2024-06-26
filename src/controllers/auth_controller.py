@@ -2,6 +2,7 @@ from src import api, web_api
 from flask import request, jsonify, session
 from flask_restx import Resource, fields
 from src.auth.auth import verify_id_token, state
+from src.controllers.error_controller import handle_errors
 
 
 ns_auth = api.namespace('auth', description='Authentication')
@@ -13,6 +14,7 @@ auth_model = api.model('Auth', {
 @ns_auth.route('/login')
 class LoginResource(Resource):
     @ns_auth.expect(auth_model)
+    @handle_errors
     def post(self):
         '''Logging in controller'''
         data = request.json
@@ -35,6 +37,7 @@ class LoginResource(Resource):
 
 @ns_auth.route('/logout')
 class LogoutResource(Resource):
+    @handle_errors
     def post(self):
         '''Logout controller'''
         web_api.config["AUTH_TOKEN"] = 'none'

@@ -58,6 +58,8 @@ from flask import jsonify, request
 import json
 import urllib.request
 
+from src.controllers.error_controller import handle_errors
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
@@ -78,6 +80,7 @@ news_model = api.model('NewsArticle', {
 
 @ns_agriculture_news.route('/')
 class AgricultureNewsResource(Resource):
+    @handle_errors
     @ns_agriculture_news.response(200, 'Success', [news_model])
     def get(self):
         """Fetches the latest agriculture news in Africa."""

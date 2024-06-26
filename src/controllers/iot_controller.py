@@ -1,6 +1,7 @@
 import json
 from flask import jsonify, request
 import requests
+from src.controllers.error_controller import handle_errors
 from src.models.chat import Chat
 from src.auth.auth import login_required
 from src import logging, web_api, api, Resource, fields, bucket
@@ -47,6 +48,7 @@ image_analysis_response_model = api.model('ImageAnalysisResponse', {
 @ns_soil_data.route('/')
 class SoilDataResource(Resource):
     @login_required
+    @handle_errors
     @ns_soil_data.response(200, 'Success', [soil_data_model])
     @ns_soil_data.doc(security='Bearer Auth')
     def get(self):
@@ -67,6 +69,7 @@ class SoilDataResource(Resource):
 @ns_soil_analysis.route('/')
 class SoilAnalysisResource(Resource):
     @login_required
+    @handle_errors
     @ns_soil_analysis.response(200, 'Success', [analysis_response_model])
     @ns_soil_data.doc(security='Bearer Auth')
     def get(self):
@@ -84,6 +87,7 @@ class SoilAnalysisResource(Resource):
 @ns_daily_averages.route('/')
 class DailyAveragesResource(Resource):
     @login_required
+    @handle_errors
     @ns_daily_averages.response(200, 'Success', averages_list_model)
     @ns_daily_averages.doc(security='Bearer Auth')
     def get(self):
@@ -99,6 +103,7 @@ class DailyAveragesResource(Resource):
 @ns_drone_image_analysis.route('/')
 class DroneImageAnalysisResource(Resource):
     @login_required
+    @handle_errors
     @ns_drone_image_analysis.response(200, 'Success', [image_analysis_response_model])
     @ns_drone_image_analysis.doc(security='Bearer Auth')
     def get(self):

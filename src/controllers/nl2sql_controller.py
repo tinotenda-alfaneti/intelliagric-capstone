@@ -7,6 +7,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from src.controllers.chat_controller import session
 from src import ORIGIN_URL, OPENAI_API_KEY, api, Resource, fields, logging, web_api
+from src.controllers.error_controller import handle_errors
 from src.models.chat import CHAT_PROMPT
 
 # Configure logging
@@ -53,6 +54,7 @@ response_model = api.model('QueryResponse', {
 
 @ns_query_ecommerce.route('/')
 class EcommerceQueryResource(Resource):
+    @handle_errors
     @ns_query_ecommerce.expect(ecommerce_query_model)
     @ns_query_ecommerce.response(200, 'Success', response_model)
     def post(self):

@@ -4,6 +4,7 @@ from firebase_admin import db
 from src.auth.auth import verify_id_token
 from src import api, database, Resource, fields, web_api
 from src.auth.auth import login_required
+from src.controllers.error_controller import handle_errors
 from src.models.firebase import Firebase
 from src.models.utils import API
 from src.models.chat import Chat
@@ -38,6 +39,7 @@ farm_overview_model = api.model('FarmOverview', {
 @ns_farm.route('/register')
 class RegisterFarm(Resource):
     @login_required
+    @handle_errors
     @ns_farm.expect(farm_model)
     @ns_farm.response(200, 'Success')
     @ns_farm.response(400, 'Validation Error')
@@ -91,6 +93,7 @@ class RegisterFarm(Resource):
 @ns_farm.route('/overview')
 class FarmOverview(Resource):
     @login_required
+    @handle_errors
     @ns_farm.response(200, 'Success', model=farm_overview_model)
     @ns_farm.response(400, 'Validation Error')
     def get(self):

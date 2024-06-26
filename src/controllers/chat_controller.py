@@ -1,6 +1,7 @@
 from src import ORIGIN_URL, web_api, api, Resource, fields, logging
 from flask import request, jsonify, session, make_response
 import os, json
+from src.controllers.error_controller import handle_errors
 from src.models.chat import Chat
 from src.models.chat import CHAT_PROMPT
 from src.models.firebase import Firebase
@@ -50,6 +51,7 @@ TEST_DATA = {
 
 @ns_chat.route('/')
 class ChatResource(Resource):
+    @handle_errors
     @ns_chat.expect(message_model)
     @ns_chat.response(200, 'Success')
     def post(self):
@@ -74,6 +76,7 @@ class ChatResource(Resource):
 
 @ns_chat.route('/save')
 class ChatResource(Resource):
+    @handle_errors
     @login_required
     @ns_chat.expect(single_message_model)
     @ns_chat.response(200, 'Success')
@@ -103,6 +106,7 @@ class ChatResource(Resource):
 @ns_chat.route('/saved_chats')
 class RetrieveChatResource(Resource):
     @login_required
+    @handle_errors
     @ns_chat.response(200, 'Success', model=messages_response_model)
     @ns_chat.response(400, 'Bad Request', model=error_response_model)
     @ns_chat.response(500, 'Internal Server Error', model=error_response_model)

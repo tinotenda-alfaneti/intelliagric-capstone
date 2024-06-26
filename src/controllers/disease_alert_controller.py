@@ -1,5 +1,6 @@
 from flask_restx import Resource, fields
 from src import database, scheduler, api, twilio_client, TWILIO_NUM
+from src.controllers.error_controller import handle_errors
 
 #TODO: add methods interacting with database to firebase module
 ns_broadcast = api.namespace('broadcasts', description='Broadcast operations')
@@ -65,6 +66,7 @@ if scheduler.running == False:
 
 @ns_broadcast.route('/')
 class BroadcastList(Resource):
+    @handle_errors
     @ns_broadcast.response(200, 'Success', broadcast_model)
     @ns_broadcast.doc(security='Bearer Auth')
     def get(self):

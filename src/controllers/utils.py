@@ -29,18 +29,18 @@ class UploadImageResource(Resource):
     def post(self):
         """Uploads an image and returns the file path."""
         if 'image' not in request.files:
-            return jsonify({"error": "No image part in the request"}), 400
+            return jsonify({"error": "No image part in the request"})
         
         file = request.files['image']
         
         if file.filename == '':
-            return jsonify({"error": "No selected file"}), 400
+            return jsonify({"error": "No selected file"})
         
         if file:
             filename = secure_filename(file.filename)
             filepath = os.path.join(web_api.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
-            return jsonify({"path": filepath}), 200
+            return jsonify({"path": filepath})
             
 api.add_namespace(ns_upload, path='/upload')
     

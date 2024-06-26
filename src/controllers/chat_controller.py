@@ -64,7 +64,7 @@ class ChatResource(Resource):
         session['conversation_history'].append({"role": "user", "content": user_input})
         
         if len(session['conversation_history']) > HISTORY_LIMIT:
-            session['conversation_history'] = session['conversation_history'][-HISTORY_LIMIT:]
+            session['conversation_history'] = session['conversation_history'][-HISTORY_LIMIT - 1:]
         
         intent_response = Chat.get_intent_and_response(session['conversation_history'])
 

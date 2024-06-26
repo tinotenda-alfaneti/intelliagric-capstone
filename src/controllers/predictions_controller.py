@@ -3,7 +3,7 @@ import json
 import numpy as np
 import logging
 from flask import request, session, jsonify, make_response
-from src.controllers.error_controller import handle_errors
+from src.controllers.error_controller import InvalidDiseasePredictionError, handle_errors
 from src.models.predictions import Predict
 from src.models.chat import CHAT_PROMPT
 from src.models.chat import Chat
@@ -40,8 +40,10 @@ class PredictDiseaseResource(Resource):
         crop_img =  request.json.get('path')
         user_input = request.json.get('message')
         
-        # model_response = Predict.maize_disease_prediction(TEST_IMG)
         model_response = Predict.maize_disease_prediction(crop_img)
+        if isinstance(model_response, str):
+            raise InvalidDiseasePredictionError()
+
         refined_response = Chat.refine_response(user_input, model_response)
 
         # add prediction to database for verification and APIs

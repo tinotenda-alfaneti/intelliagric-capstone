@@ -1,7 +1,7 @@
 from src import api, web_api
 from flask import request, jsonify, session
 from flask_restx import Resource, fields
-from src.auth.auth import verify_id_token, state
+from src.auth.auth import login_routine, verify_id_token, state
 from src.controllers.error_controller import handle_errors
 
 
@@ -30,7 +30,7 @@ class LoginResource(Resource):
             response = jsonify({"error": "Invalid token"})
             response.status_code = 401
             return response
-
+        login_routine(token, state)
         response = jsonify({"success": "Login successful"})
         response.status_code = 200
         return response

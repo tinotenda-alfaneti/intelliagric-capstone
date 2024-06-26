@@ -16,7 +16,6 @@ def verify_id_token(uid):
     try:
         user = auth.get_user(uid)
         logging.info(f"Verification for {user} successful")
-        login_routine(uid, state)
         return user
     except Exception as e:
         logging.error(f"Verification failed {e}")
@@ -40,7 +39,7 @@ def login_required(f):
             response = jsonify({"error": "Invalid token"})
             response.status_code = 401
             return response
-
+        web_api.config["AUTH_TOKEN"] = id_token
         return f(*args, **kwargs)
     return decorated_function
 

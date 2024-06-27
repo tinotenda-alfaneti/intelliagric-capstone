@@ -1,7 +1,7 @@
 import os
 from datetime import timedelta
 
-from flask import Flask, request
+from flask import Flask
 from flask_session import Session
 from flask_cors import CORS
 from flask_restx import Api
@@ -92,26 +92,6 @@ scheduler.add_job(func=DiseaseAlerts.check_disease_predictions, trigger='cron', 
 scheduler.add_job(func=clean_old_data, trigger='interval', hours=1)
 scheduler.add_job(func=check_transfer, trigger='interval', minutes=1)
 scheduler.add_job(func=save_daily_average, trigger='interval', seconds=60)
-
-# shutdown function
-#TODO: Add flask stop also in the function
-
-def shutdown_server():
-    func = request.environ.get('werkzeug.server.shutdown')
-    if func is None:
-        raise RuntimeError('Not running with the Werkzeug Server')
-    func()
-
-# def shutdown_scheduler():
-#     print("Shutting down scheduler...")
-#     scheduler.shutdown(wait=False)
-#     shutdown_server()
-
-# # Register shutdown signals
-# signal.signal(signal.SIGINT, lambda signum, frame: shutdown_scheduler())
-# signal.signal(signal.SIGTERM, lambda signum, frame: shutdown_scheduler())
-
-
 
 # Register atexit handler
 if scheduler.running:

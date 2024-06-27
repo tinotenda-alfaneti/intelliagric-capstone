@@ -16,7 +16,8 @@ class Firebase:
                 'farm_name': farm_data['farm_name'],
                 'country': farm_data['country'],
                 'farming_type': farm_data['farming_type'],
-                'land_size': farm_data['land_size']
+                'land_size': farm_data['land_size'],
+                'location': farm_data['location']
             }
 
             return farm_info

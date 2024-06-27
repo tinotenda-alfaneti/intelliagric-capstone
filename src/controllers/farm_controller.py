@@ -23,6 +23,7 @@ farm_model = api.model('RegisterFarm', {
     'landSize': fields.String(required=True, description='Land Size'),
     'farmingType': fields.String(required=True, description='Farming Type'),
     'contact': fields.String(required=True, description='Contact'),
+    'location': fields.String(required=True, description='Location'),
 })
 
 # Model for the farm overview response
@@ -53,6 +54,7 @@ class RegisterFarm(Resource):
         farm_name = data.get('farmName')
         land_size = data.get('landSize')
         farming_type = data.get('farmingType')
+        location = data.get('location')
 
         try:
             # Verify the ID token
@@ -72,7 +74,8 @@ class RegisterFarm(Resource):
                 'farm_name': farm_name,
                 'land_size': land_size,
                 'farming_type': farming_type,
-                'contact': contact
+                'contact': contact,
+                'location': location
             }
             
             response = Firebase.add_farm(farm_data)

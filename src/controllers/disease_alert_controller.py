@@ -1,8 +1,9 @@
 from flask_restx import Resource, fields
-from src import database, scheduler, api, twilio_client, TWILIO_NUM
+from src import database, scheduler, api
 from src.controllers.error_controller import handle_errors
+from src.models.notification_service import Notifications
 
-#TODO: add methods interacting with database to firebase module
+# TODO: add methods interacting with database to firebase module
 ns_broadcast = api.namespace('broadcasts', description='Broadcast operations')
 
 broadcast_model = api.model('Broadcast', {
@@ -39,26 +40,7 @@ def check_disease_predictions():
             if count >= 5:
                 alerts.append({'disease': disease, 'location': location})
 
-    send_notifications(alerts, farms)
-
-def send_notifications(alerts, farms):
-    for alert in alerts:
-        location = alert['location']
-        disease = alert['disease']
-
-        affected_farms = [farm for farm in farms.values() if farm['location'] == location]
-
-        for farm in affected_farms:
-            contact = farm.get('contact')
-            #TODO: Pass the message from GPT-API to make the Alert informative and have recommendations
-            message = f"Alert: There have been multiple cases of {disease} detected in your area. Please take necessary precautions."
-
-            if contact:
-                twilio_client.messages.create(
-                    body=message,
-                    from_=TWILIO_NUM, 
-                    to=contact
-                )
+    Notifications.send_notifications(alerts, farms)
 
 scheduler.add_job(check_disease_predictions, 'cron', hour=0, minute=0)
 if scheduler.running == False:
@@ -73,7 +55,7 @@ class BroadcastList(Resource):
         """List all disease alerts"""
         alerts_ref = database.collection('alerts')
         docs = alerts_ref.stream()
-        #TODO: Add gpt-3.5 model to get way to deal with the diseases
+        # TODO: Add gpt-3.5 model to get way to deal with the diseases
         alerts = [doc.to_dict() for doc in docs]
         return alerts, 200
 

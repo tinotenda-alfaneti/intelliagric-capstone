@@ -8,7 +8,6 @@ from flask_restx import Api
 
 from dotenv import load_dotenv
 from newsapi import NewsApiClient
-from src.config.db_config import cred
 
 from twilio.rest import Client
 

@@ -41,8 +41,6 @@ class LogoutResource(Resource):
     def post(self):
         '''Logout controller'''
         web_api.config["AUTH_TOKEN"] = 'none'
-        state.scheduler_started = False
-        state.transfer_started = False
         session.clear()
         response = jsonify({"success": "Logout successful"})
         response.status_code = 200

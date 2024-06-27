@@ -12,3 +12,4 @@ venv
 tests/resources/config.py
 .vscode
 .coverage
+cache_directory

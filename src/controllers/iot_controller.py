@@ -7,7 +7,7 @@ from src.auth.auth import login_required
 from src import logging, web_api, api, Resource, fields, bucket
 from src.models.firebase import Firebase
 from src.models.utils import API
-from src.models.iot_service import data_lock, accumulated_data
+from src.models.iot_service import data_lock, cache
 
 user_token = web_api.config["AUTH_TOKEN"]
 
@@ -44,7 +44,7 @@ image_analysis_response_model = api.model('ImageAnalysisResponse', {
     'analysis': fields.String(description='Analysis of drone images')
 })
 
-# API endponpk to fetch the latest accumulated data
+# API endpoint to fetch the latest accumulated data
 @ns_soil_data.route('/')
 class SoilDataResource(Resource):
     @login_required
@@ -52,18 +52,23 @@ class SoilDataResource(Resource):
     @ns_soil_data.response(200, 'Success', [soil_data_model])
     @ns_soil_data.doc(security='Bearer Auth')
     def get(self):
-
         with data_lock:
-            mois_data = accumulated_data['mois'][-1] if accumulated_data['mois'] else None
-            npk_data = accumulated_data['npk'][-1] if accumulated_data['npk'] else None
-            temp_data = accumulated_data['temp'][-1] if accumulated_data['temp'] else None
-            ph_data = accumulated_data['ph'][-1] if accumulated_data['ph'] else None
+            mois_data = cache.get('mois', [])
+            npk_data = cache.get('npk', [])
+            temp_data = cache.get('temp', [])
+            ph_data = cache.get('ph', [])
+
+            # Extract the most recent values
+            mois_value = mois_data[-1]['value'] if mois_data else None
+            npk_value = npk_data[-1]['value'] if npk_data else None
+            temp_value = temp_data[-1]['value'] if temp_data else None
+            ph_value = ph_data[-1]['value'] if ph_data else None
 
             return jsonify({
-                "mois": mois_data,
-                "npk": npk_data,
-                "temp": temp_data,
-                "ph": ph_data
+                "mois": mois_value,
+                "npk": npk_value,
+                "temp": temp_value,
+                "ph": ph_value
             })
     
 @ns_soil_analysis.route('/')
@@ -73,7 +78,6 @@ class SoilAnalysisResource(Resource):
     @ns_soil_analysis.response(200, 'Success', [analysis_response_model])
     @ns_soil_data.doc(security='Bearer Auth')
     def get(self):
-
         user_token = web_api.config["AUTH_TOKEN"]
         get_data_response = requests.get(f'{request.url_root}/get_soil_data', headers={"Authorization": f"Bearer {user_token}"})
 
@@ -91,7 +95,6 @@ class DailyAveragesResource(Resource):
     @ns_daily_averages.response(200, 'Success', averages_list_model)
     @ns_daily_averages.doc(security='Bearer Auth')
     def get(self):
-
         user_token = web_api.config["AUTH_TOKEN"]
         try:
             averages = Firebase.get_average_data(user_token)
@@ -110,7 +113,6 @@ class DroneImageAnalysisResource(Resource):
         user_token = web_api.config["AUTH_TOKEN"]
 
         try:
-
             blobs = bucket.list_blobs(prefix=f'drone_images/{user_token}/')
 
             image_urls = []

@@ -1,13 +1,14 @@
 import logging
 from flask import request
-from firebase_admin import db
+from src.config.config import Config
 from src.auth.auth import verify_id_token
-from src import api, database, Resource, fields, web_api
+from src import api
 from src.auth.auth import login_required
 from src.controllers.error_controller import handle_errors
 from src.models.firebase import Firebase
 from src.models.utils import API
 from src.models.chat import Chat
+from flask_restx import fields, Resource
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -102,7 +103,7 @@ class FarmOverview(Resource):
     def get(self):
 
         try:
-            farm_info = Firebase.get_farm_info(web_api.config["AUTH_TOKEN"])
+            farm_info = Firebase.get_farm_info(Config.AUTH_TOKEN)
 
             weather_info = API.fetch_weather_data(farm_info['country'])
 

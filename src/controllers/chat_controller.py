@@ -1,12 +1,13 @@
-from src import ORIGIN_URL, web_api, api, Resource, fields, logging
-from flask import request, jsonify, session, make_response
+import logging
+from src import api
+from flask import request, jsonify, session
 import os, json
 from src.controllers.error_controller import handle_errors
 from src.models.chat import Chat
 from src.models.chat import CHAT_PROMPT
 from src.models.firebase import Firebase
-from src.models.predictions import Predict
 from src.auth.auth import login_required
+from flask_restx import fields, Resource
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)

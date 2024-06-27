@@ -1,4 +1,4 @@
-from src import web_api
+from src.config.config import Config
 from src.models.firebase import Firebase
 from datetime import datetime
 
@@ -13,7 +13,7 @@ class DataCollection:
         prediction_type = 'disease-prediction'
         img_url = Firebase.upload_image(img)
         prediction_info = {"image": img_url, "prediction": prediction, "disease":disease}
-        farm_info = Firebase.get_farm_info(web_api.config["AUTH_TOKEN"])
+        farm_info = Firebase.get_farm_info(Config.AUTH_TOKEN)
 
         if "error" in farm_info:
             Firebase.add_prediction(prediction_info, prediction_type)
@@ -29,7 +29,7 @@ class DataCollection:
         prediction_type = 'market-prediction'
         curr_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         prediction_info = {"area": area, "crop": item, "datetime": curr_datetime, "prediction": prediction}
-        farm_info = Firebase.get_farm_info(web_api.config["AUTH_TOKEN"])
+        farm_info = Firebase.get_farm_info(Config.AUTH_TOKEN)
 
         if "error" in farm_info:
             Firebase.add_prediction(prediction_info, prediction_type)

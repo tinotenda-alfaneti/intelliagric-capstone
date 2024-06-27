@@ -1,14 +1,17 @@
-from flask import request, jsonify, make_response, json
+import logging
+from flask import request, jsonify, make_response
 from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_openai import ChatOpenAI
 from langchain.chains import create_sql_query_chain
 from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from src.config.apis_config import OPENAI_API_KEY
 from src.controllers.chat_controller import session
-from src import OPENAI_API_KEY, api, Resource, fields, logging, DB_HOST, DB_NAME, DB_PASSWORD, DB_USER
+from src import api, DB_HOST, DB_NAME, DB_PASSWORD, DB_USER
 from src.controllers.error_controller import handle_errors
 from src.models.chat import CHAT_PROMPT
+from flask_restx import fields, Resource
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)

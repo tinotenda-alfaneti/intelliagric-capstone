@@ -1,15 +1,22 @@
 import json
+import logging
 from flask import jsonify, request
 import requests
+from src.config.config import Config
 from src.controllers.error_controller import handle_errors
 from src.models.chat import Chat
 from src.auth.auth import login_required
-from src import logging, web_api, api, Resource, fields, bucket
+from src import web_api, api
 from src.models.firebase import Firebase
 from src.models.utils import API
 from src.models.iot_service import data_lock, cache
+from src.config.db_config import bucket
+from flask_restx import fields, Resource
 
-user_token = web_api.config["AUTH_TOKEN"]
+# Initialize logging
+logging.basicConfig(level=logging.DEBUG)
+
+user_token = Config.AUTH_TOKEN
 
 ns_soil_data = api.namespace('get_soil_data', description='Soil data from IoT device readings')
 ns_soil_analysis = api.namespace('soil_analysis', description='Soil Analysis from IoT device data')
@@ -78,7 +85,7 @@ class SoilAnalysisResource(Resource):
     @ns_soil_analysis.response(200, 'Success', [analysis_response_model])
     @ns_soil_data.doc(security='Bearer Auth')
     def get(self):
-        user_token = web_api.config["AUTH_TOKEN"]
+        user_token = Config.AUTH_TOKEN
         get_data_response = requests.get(f'{request.url_root}/get_soil_data', headers={"Authorization": f"Bearer {user_token}"})
 
         if get_data_response.status_code != 200:
@@ -95,7 +102,7 @@ class DailyAveragesResource(Resource):
     @ns_daily_averages.response(200, 'Success', averages_list_model)
     @ns_daily_averages.doc(security='Bearer Auth')
     def get(self):
-        user_token = web_api.config["AUTH_TOKEN"]
+        user_token = Config.AUTH_TOKEN
         try:
             averages = Firebase.get_average_data(user_token)
             return jsonify({'averages': averages})
@@ -110,7 +117,7 @@ class DroneImageAnalysisResource(Resource):
     @ns_drone_image_analysis.response(200, 'Success', [image_analysis_response_model])
     @ns_drone_image_analysis.doc(security='Bearer Auth')
     def get(self):
-        user_token = web_api.config["AUTH_TOKEN"]
+        user_token = Config.AUTH_TOKEN
 
         try:
             blobs = bucket.list_blobs(prefix=f'drone_images/{user_token}/')

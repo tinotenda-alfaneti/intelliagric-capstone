@@ -1,13 +1,12 @@
-from src import ORIGIN_URL, web_api, api, fields, Resource
-import json
-import numpy as np
+from src import api
 import logging
-from flask import request, session, jsonify, make_response
+from flask import request, session, jsonify
 from src.controllers.error_controller import InvalidDiseasePredictionError, handle_errors
 from src.models.predictions import Predict
 from src.models.chat import CHAT_PROMPT
 from src.models.chat import Chat
 from src.models.data_collection import DataCollection
+from flask_restx import fields, Resource
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)

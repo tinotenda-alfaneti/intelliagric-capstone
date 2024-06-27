@@ -52,7 +52,6 @@ class API:
             url = f"{base_url}&date={formatted_date}&appid={WEATHER_API_KEY}"
             response = requests.get(url)
             data = response.json()
-            # print(data)
 
             try:
                 min_temp_fahrenheit = data["temperature"]["min"]

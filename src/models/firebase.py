@@ -1,4 +1,5 @@
-from src import client, database, web_api, db, bucket
+from src.config.config import Config
+from src.config.db_config import database, db, bucket
 import json
 import time
 
@@ -74,7 +75,7 @@ class Firebase:
     @staticmethod
     def save_chat(message):
         try:
-            db = database.collection(f'history-{web_api.config["AUTH_TOKEN"]}')
+            db = database.collection(f'history-{Config.AUTH_TOKEN}')
             doc_ref = db.add(message)
             print(f'Document added with ID: {doc_ref.id}')
             return json.dumps({"Success": "Data added successfully"})
@@ -84,9 +85,9 @@ class Firebase:
     @staticmethod
     def retrieve_saved_chats():
         try:
-            if not web_api.config["AUTH_TOKEN"]:
+            if not Config.AUTH_TOKEN:
                 raise Exception("Auth token not found")
-            db = database.collection(f'history-{web_api.config["AUTH_TOKEN"]}')
+            db = database.collection(f'history-{Config.AUTH_TOKEN}')
             messages = db.stream()
             message_list = []
             for message in messages:

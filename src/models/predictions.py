@@ -1,24 +1,9 @@
 import logging
 import numpy as np
-import os
 import requests
 import json
-import datetime
 import pandas as pd 
-from src import HF_TOKEN
-from src.models.utils import API
-
-crop_yields_data = os.path.dirname(__file__) + "/ml_models/crops_dataset/crop_yields_dataset.csv"
-
-
-max_length = 100
-
-DISEASE_MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/muAtarist/maize_disease_model"
-MARKET_MODEL_ENDPOINT = "https://predict-kasxmzorbq-od.a.run.app/predict"
-
-HEADERS = {"Authorization": "Bearer " + HF_TOKEN}
-
-YEAR = datetime.date.today().year
+from src.models.utils import API, DISEASE_MODEL_ENDPOINT, HEADERS, MARKET_MODEL_ENDPOINT, YEAR, crop_yields_data
 
 class Predict:
 

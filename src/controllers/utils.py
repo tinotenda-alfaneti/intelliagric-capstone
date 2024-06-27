@@ -1,8 +1,12 @@
+import logging
 from flask import request, jsonify, make_response
 import os
 from werkzeug.utils import secure_filename
-from src import web_api, ORIGIN_URL, logging, api
+from src import web_api, ORIGIN_URL, api
 from flask_restx import Resource, fields
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
 
 UPLOAD_FOLDER = os.path.dirname(__file__) + '/uploads'
 web_api.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER

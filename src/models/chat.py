@@ -1,6 +1,5 @@
-from src import client, database, web_api
-from src.models.PROMPTS import CHATTING_PROMPT_V1, REFINING_PROMPT_V1, ANALYSING_PROMPT_V0, FARM_OVERVIEW_PROMPT_V0
-import json
+from src.models.prompts import CHATTING_PROMPT_V1, REFINING_PROMPT_V1, ANALYSING_PROMPT_V0, FARM_OVERVIEW_PROMPT_V0
+from src.config.apis_config import client
 
 CHAT_PROMPT = [
             {

@@ -2,7 +2,7 @@ import http.client
 from codecs import encode
 import json
 import logging
-from src import EMAIL_BOUNDARY, INFOBIP_KEY, INFOBIP_BASE_URL
+from src.config.apis_config import EMAIL_BOUNDARY, INFOBIP_BASE_URL, INFOBIP_KEY
 from src.models.chat import Chat
 
 # Configure logging

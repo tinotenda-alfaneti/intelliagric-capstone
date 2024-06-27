@@ -1,7 +1,6 @@
 from functools import wraps
-from flask import jsonify
+from flask import jsonify, session
 import logging
-from src import session
 from flask import jsonify
 
 from src.models.chat import CHAT_PROMPT

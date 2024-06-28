@@ -31,7 +31,7 @@ web_api.config['PERMANENT_SESSION_LIFETIME'] =  timedelta(minutes=45)
 Session(web_api)
 
 # ORIGIN_URL = "http://localhost:3000" #TODO: Replace with the deployed version
-ORIGIN_URL = ["https://intelli-agric-react-app.vercel.app", "https://intelli-agric-react-app.vercel.app/"] #TODO: Replace with the deployed version
+ORIGIN_URL = "https://intelli-agric-react-app.vercel.app" #TODO: Replace with the deployed version
 
 # secre key
 web_api.secret_key = os.urandom(24)

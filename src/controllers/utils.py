@@ -67,7 +67,7 @@ api.add_namespace(ns_upload, path='/upload')
 def handle_options():
     logging.info("Started the preflight handling")
     response = make_response()
-    response.headers.add("Access-Control-Allow-Origin", ", ".join(ORIGIN_URL))
+    response.headers.add("Access-Control-Allow-Origin", ORIGIN_URL)
     response.headers.add("Access-Control-Allow-Headers", "Authorization, Content-Type")
     response.headers.add("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
     response.headers.add("Access-Control-Allow-Credentials", "true")

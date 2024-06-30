@@ -75,30 +75,29 @@ def watch_realtime_db():
 
 # Function to calculate daily average and save to Firestore
 def save_daily_average():
-    with data_lock:
-        try:
-            if Config.AUTH_TOKEN != 'none':
-                logging.debug("Calculating daily averages and saving to Firestore.")
-                avg_data = {}
-                for sensor_type in ['mois', 'npk', 'temp', 'ph']:
-                    sensor_values = get_data(sensor_type)
-                    if sensor_values:
-                        avg_data[sensor_type] = sum(sensor_values) / len(sensor_values)
-                        logging.info(f"Saved {sensor_type} average: {avg_data[sensor_type]}")
-                if avg_data:
-                    avg_data['timestamp'] = datetime.now()
-                    Firebase.save_average_data(avg_data, user_token=Config.AUTH_TOKEN)
-                    logging.debug("Saved daily averages")
+    try:
+        if Config.AUTH_TOKEN != 'none':
+            logging.debug("Calculating daily averages and saving to Firestore.")
+            avg_data = {}
+            for sensor_type in ['mois', 'temp', 'ph']:
+                sensor_values = get_data(sensor_type)
+                if sensor_values:
+                    avg_data[sensor_type] = sum(sensor_values) / len(sensor_values)
+                    logging.info(f"Saved {sensor_type} average: {avg_data[sensor_type]}")
+            if avg_data:
+                avg_data['timestamp'] = datetime.now()
+                Firebase.save_average_data(avg_data, user_token=Config.AUTH_TOKEN)
+                logging.debug("Saved daily averages")
 
-                # Clear the accumulated data for the next day
-                for sensor_type in ['mois', 'npk', 'temp', 'ph']:
-                    with data_lock:
-                        cache[sensor_type] = []
-                logging.debug("Cleared accumulated data for the next day.")
-            else:
-                logging.info("AUTH_TOKEN is None, skipping save_daily_average.")
-        except Exception as e:
-            logging.error(f"Error in save_daily_average: {e}")
+            # Clear the accumulated data for the next day
+            for sensor_type in ['mois', 'npk', 'temp', 'ph']:
+                with data_lock:
+                    cache[sensor_type] = []
+            logging.debug("Cleared accumulated data for the next day.")
+        else:
+            logging.info("AUTH_TOKEN is None, skipping save_daily_average.")
+    except Exception as e:
+        logging.error(f"Error in save_daily_average: {e}")
 
 # Start watching the database as soon as log in is successful
 def start_transfer():

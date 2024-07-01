@@ -44,12 +44,12 @@ def get_data(sensor_type):
         return [entry['value'] for entry in cache[sensor_type]]
     return []
 
-# Function to clean old data from the cache
+#  Function to clean old data from the cache
 def clean_old_data():
     threshold = time.time() - 24 * 3600
     logging.debug(f"Cleaning data older than: {threshold}")
     with data_lock:
-        for sensor_type in list(cache.keys()):  # Convert to list to allow modification during iteration
+        for sensor_type in list(cache.iterkeys()):
             old_data = cache[sensor_type]
             cache[sensor_type] = [entry for entry in cache[sensor_type] if entry['timestamp'] >= threshold]
             logging.debug(f"Cleaned {sensor_type} cache. Before: {old_data}, After: {cache[sensor_type]}")

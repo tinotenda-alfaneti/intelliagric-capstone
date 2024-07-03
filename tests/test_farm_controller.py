@@ -2,7 +2,8 @@ import logging
 import unittest
 from unittest.mock import patch, MagicMock
 from flask_testing import TestCase
-from src import web_api, api, Resource, fields
+from src import web_api, api
+from flask_restx import Resource, fields
 from src.models.firebase import Firebase
 from src.models.utils import API
 from src.models.chat import Chat

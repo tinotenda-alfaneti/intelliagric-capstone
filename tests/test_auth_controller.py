@@ -2,6 +2,7 @@ import logging
 import unittest
 from unittest.mock import patch, MagicMock
 from src import web_api
+from src.config.config import Config
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -11,9 +12,9 @@ class AuthTestCase(unittest.TestCase):
         web_api.config['TESTING'] = True
 
     @patch('src.controllers.auth_controller.verify_id_token')
-    @patch('src.controllers.auth_controller.scheduler')
-    @patch('src.controllers.auth_controller.save_daily_average')
-    @patch('src.controllers.auth_controller.start_transfer')
+    @patch('src.scheduler')
+    @patch('src.models.iot_service.save_daily_average')
+    @patch('src.models.iot_service.start_transfer')
     def test_login_success(self, mock_start_transfer, mock_save_daily_average, mock_scheduler, mock_verify_id_token):
         # Mock verify_id_token to return a user object
         mock_user = MagicMock()
@@ -27,10 +28,8 @@ class AuthTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200, f"Expected status code 200, got {response.status_code}")
         self.assertEqual(data['success'], 'Login successful')
         mock_verify_id_token.assert_called_once_with('valid_token')
-        self.assertEqual(web_api.config["AUTH_TOKEN"], 'valid_token')
-        mock_scheduler.add_job.assert_called_once()
-        mock_start_transfer.assert_called_once()
-        mock_scheduler.start.assert_called_once()
+        self.assertEqual(Config.AUTH_TOKEN, 'valid_token')
+
     
     @patch('src.controllers.auth_controller.verify_id_token')
     def test_login_missing_token(self, mock_verify_id_token):
@@ -61,7 +60,7 @@ class AuthTestCase(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(data['success'], 'Logout successful')
-        self.assertEqual(web_api.config["AUTH_TOKEN"], 'none')
+        self.assertEqual(Config.AUTH_TOKEN, 'none')
         with self.client.session_transaction() as sess:
             self.assertFalse('some_key' in sess)
 

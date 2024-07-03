@@ -22,7 +22,7 @@ def handle_errors(f):
             response = "Oops so sorry, I had an issue during the prediction, please kindly wait for a few seconds and try me again"
 
             session['conversation_history'].append({"role": "assistant", "content": response})
-            final_response = jsonify({"response": response, "chat_history": session['conversation_history']})
+            final_response = jsonify({"response": response, "chat_history": session['conversation_history'][-3:]})
             final_response.status_code = 500
             return final_response
 
@@ -33,7 +33,7 @@ def handle_errors(f):
             logging.exception('Server Error: %s', (error))
             response = "Sorry, I am having technical issues please try again in a moment"
             session['conversation_history'].append({"role": "assistant", "content": response})
-            final_response = jsonify({"response": response, "chat_history": session['conversation_history']})
+            final_response = jsonify({"response": response, "chat_history": session['conversation_history'][-3:]})
             final_response.status_code = 500
             return final_response
 

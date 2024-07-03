@@ -50,7 +50,7 @@ class PredictDiseaseResource(Resource):
 
         # refined response structure:  {"refined": "disease prediction", "message": "There is an 80% chance that your tomato crop may"}
         session['conversation_history'].append({"role": "assistant", "content": refined_response})
-        return jsonify({'response': refined_response, 'chat_history': session['conversation_history']})
+        return jsonify({'response': refined_response, 'chat_history': session['conversation_history'][-3:]})
 
 
 @ns_predict_market.route('/')
@@ -76,7 +76,7 @@ class PredictMarketResource(Resource):
 
         # refined response structure: {"refined": "market prediction", "message": "The predicted supply of maize in Nigeria is high compared to the average of the past 16 years."}
         session['conversation_history'].append({"role": "assistant", "content": refined_response})
-        return jsonify({'response': refined_response, 'chat_history': session['conversation_history']})
+        return jsonify({'response': refined_response, 'chat_history': session['conversation_history'][-3:]})
 
 api.add_namespace(ns_predict_disease, path='/predict_disease')
 api.add_namespace(ns_predict_market, path='/predict_market')  

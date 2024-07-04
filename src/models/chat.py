@@ -1,4 +1,4 @@
-from src.models.prompts import CHATTING_PROMPT_V1, REFINING_PROMPT_V1, ANALYSING_PROMPT_V0, FARM_OVERVIEW_PROMPT_V0
+from src.models.prompts import CHATTING_PROMPT_V1, DISEASE_ANALYSIS_PROMPT_V0, REFINING_PROMPT_V1, ANALYSING_PROMPT_V0, FARM_OVERVIEW_PROMPT_V0
 from src.config.apis_config import client
 
 CHAT_PROMPT = [
@@ -76,6 +76,25 @@ class Chat:
                 Farm Information: {farm_info}
 
                 {FARM_OVERVIEW_PROMPT_V0}
+
+            """
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "system", "content": prompt}],
+            temperature=0,
+            max_tokens=MAX_TOKENS
+        )
+        return response.choices[0].message.content
+    
+    @staticmethod
+    def disease_alerts(diseases):
+
+        prompt = f"""
+                Based on the following diseases, provide insights and recommendations for a small-scale farmer in Africa.
+
+                Diseases: {diseases}
+
+                {DISEASE_ANALYSIS_PROMPT_V0}
 
             """
         response = client.chat.completions.create(

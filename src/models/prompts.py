@@ -410,3 +410,7 @@ ANALYSING_PROMPT_V0 = """
 FARM_OVERVIEW_PROMPT_V0 = """ 
       Your task is to analyze this farm data and offer practical, easy-to-understand advice. Make sure your recommendations are specific to small-scale farmers in Africa. Break down any complex ideas and provide actionable steps that the farmer can take to improve their soil health and crop yield.
 """
+
+DISEASE_ANALYSIS_PROMPT_V0 = """ 
+      Your task is to analyze these disease and offer practical, easy-to-understand advice and recommendations. Make sure your recommendations are specific to small-scale farmers in Africa. Break down any complex ideas and provide actionable steps that the farmer can take to avoid or deal with the given diseases.
+"""

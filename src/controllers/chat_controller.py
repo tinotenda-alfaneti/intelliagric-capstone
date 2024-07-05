@@ -73,7 +73,7 @@ class ChatResource(Resource):
 
         session['conversation_history'].append({"role": "assistant", "content": intent_response})
 
-        return jsonify({"response": intent_response, "chat_history": session['conversation_history']})
+        return jsonify({"response": intent_response, "chat_history": session['conversation_history'][-3:]})
 
 @ns_chat.route('/save')
 class ChatResource(Resource):

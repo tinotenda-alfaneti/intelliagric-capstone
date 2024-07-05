@@ -84,7 +84,7 @@ class EcommerceQueryResource(Resource):
             session['conversation_history'].append({"role": "assistant", "content": response})
 
             logging.info(f"History: {session['conversation_history']}")
-            return make_response(jsonify({"response": response, "chat_history": session['conversation_history']}), 200)
+            return make_response(jsonify({"response": response, "chat_history": session['conversation_history'][-3:]}), 200)
 
         except Exception as e:
             logging.error(f"Error processing query - {e}")

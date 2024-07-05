@@ -36,7 +36,7 @@ ORIGIN_URL = "http://localhost:3000" #TODO: Replace with the deployed version
 # secre key
 web_api.secret_key = os.urandom(24)
 
-CORS(web_api, supports_credentials=True, resources={r"/*": {"origins": ORIGIN_URL}})
+CORS(web_api, supports_credentials=True, resources={r"/*": {"origins": [ORIGIN_URL,"https://intelli-agric-react-app.vercel.app/"]}})
 
 authorizations = {
     'Bearer Auth': {

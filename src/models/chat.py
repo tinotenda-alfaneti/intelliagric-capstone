@@ -8,7 +8,8 @@ CHAT_PROMPT = [
             }
         ]
 
-MODEL = "gpt-3.5-turbo"
+# MODEL = "gpt-3.5-turbo"
+MODEL = "gpt-4o"
 MAX_TOKENS = 150
 
 class Chat:

@@ -137,7 +137,7 @@ class DroneImageAnalysisResource(Resource):
 
             refined_response = Chat.refine_response(user_input, analysis_response)
 
-            return jsonify({"analysis": refined_response})
+            return jsonify({"analysis": refined_response, "images": image_urls})
         
         except Exception as e:
             logging.error(f"Error in DroneImageAnalysisResource: {e}")

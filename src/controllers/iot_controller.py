@@ -124,7 +124,7 @@ class DroneImageAnalysisResource(Resource):
 
             image_urls = []
             for blob in blobs:
-                image_url = blob.public_url
+                image_url = image_url = f"https://firebasestorage.googleapis.com/v0/b/{bucket.name}/o/{blob.name.replace('/', '%2F')}?alt=media"
                 image_urls.append(image_url)
 
             if not image_urls:

@@ -120,26 +120,23 @@ class DroneImageAnalysisResource(Resource):
         user_token = Config.AUTH_TOKEN
 
         try:
-            blobs = bucket.list_blobs(prefix=f'drone_images/{user_token}/')
+            blobs = bucket.list_blobs(prefix=f'drone_images/{user_token}')
 
             image_urls = []
             for blob in blobs:
-                
-                image_url = blob.public_url
+                image_url = image_url = f"https://firebasestorage.googleapis.com/v0/b/{bucket.name}/o/{blob.name.replace('/', '%2F')}?alt=media"
                 image_urls.append(image_url)
 
             if not image_urls:
                 return jsonify({"error": "No images found for analysis"}), 404
 
+            image_urls = image_urls[1:]
             user_input = "These are images from the drone as it was capturing images around the farm. Please provide an analysis and recommendation on whether I should watch out for any potential diseases. "
             identification = API.identify(image_urls, flag=0)
-            logging.info(f"/////////////////////////////////////Here now .......{identification}")
             best_suggestion = max(identification['result']['disease']['suggestions'], key=lambda x: x['probability'])['name']
             analysis_response =  {"disease": best_suggestion, "detailed_info": json.dumps(identification)}
 
             refined_response = Chat.refine_response(user_input, analysis_response)
-
-            logging.info(f"/////////////////////////////////////Here now .......{refined_response}")
 
             return jsonify({"analysis": refined_response, "images": image_urls})
         

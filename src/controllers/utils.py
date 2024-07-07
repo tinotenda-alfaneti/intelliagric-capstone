@@ -65,6 +65,7 @@ api.add_namespace(ns_upload, path='/upload')
 @web_api.route('/broadcasts', methods=['OPTIONS'])
 @web_api.route('/agriculture_news', methods=['OPTIONS'])
 @web_api.route('/daily_averages', methods=['OPTIONS'])
+@web_api.route('/drone_image_analysis', methods=['OPTIONS'])
 @web_api.route('/', methods=['OPTIONS'])
 
 def handle_options():

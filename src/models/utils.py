@@ -1,3 +1,4 @@
+import logging
 import os
 import requests
 import requests
@@ -18,6 +19,9 @@ HEADERS = {"Authorization": "Bearer " + HF_TOKEN}
 
 YEAR = datetime.date.today().year
 
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+
 # encode image to base64, API needs this
 def encode_file(file_name):
     with open(file_name, "rb") as file:
@@ -25,6 +29,7 @@ def encode_file(file_name):
     
 def encode_file_url(image_url):
     response = requests.get(image_url)
+    logging.info(f"This is the response: {response}")
     if response.status_code == 200:
         return base64.b64encode(response.content).decode("ascii")
     else:

@@ -124,6 +124,7 @@ class DroneImageAnalysisResource(Resource):
 
             image_urls = []
             for blob in blobs:
+                
                 image_url = blob.public_url
                 image_urls.append(image_url)
 
@@ -132,10 +133,13 @@ class DroneImageAnalysisResource(Resource):
 
             user_input = "These are images from the drone as it was capturing images around the farm. Please provide an analysis and recommendation on whether I should watch out for any potential diseases. "
             identification = API.identify(image_urls, flag=0)
+            logging.info(f"/////////////////////////////////////Here now .......{identification}")
             best_suggestion = max(identification['result']['disease']['suggestions'], key=lambda x: x['probability'])['name']
             analysis_response =  {"disease": best_suggestion, "detailed_info": json.dumps(identification)}
 
             refined_response = Chat.refine_response(user_input, analysis_response)
+
+            logging.info(f"/////////////////////////////////////Here now .......{refined_response}")
 
             return jsonify({"analysis": refined_response, "images": image_urls})
         

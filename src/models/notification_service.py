@@ -14,7 +14,6 @@ class Notifications:
         pass
     
     @staticmethod
-    #NB: Works with verified numbers only free version - 99 sms left
     def send_sms(contact, message):
         conn = http.client.HTTPSConnection(INFOBIP_BASE_URL)
         payload = json.dumps({

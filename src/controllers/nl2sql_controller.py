@@ -30,7 +30,10 @@ try:
     llm = ChatOpenAI(model=MODEL, temperature=0, openai_api_key=OPENAI_API_KEY)
     generate_query = create_sql_query_chain(llm, db)
 
-    # Define the final prompt template
+    # Define the chain for NL2SQL execution
+    execute_query = QuerySQLDataBaseTool(db=db)
+
+        # Define the final prompt template
     final_prompt = PromptTemplate.from_template(
         """Given the following user question, corresponding SQL query, and SQL result, answer the user question.
         Question: {question}
@@ -38,10 +41,7 @@ try:
         SQL Result: {result}
         Answer: """
     )
-
-    # Define the chain for NL2SQL execution
     rephrase_answer = final_prompt | llm | StrOutputParser()
-    execute_query = QuerySQLDataBaseTool(db=db)
 except Exception as e:
     logging.error(f"Error loading SQL Database - {e}")
 

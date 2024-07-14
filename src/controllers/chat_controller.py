@@ -69,8 +69,6 @@ class ChatResource(Resource):
         
         intent_response = Chat.get_intent_and_response(session['conversation_history'])
 
-        #Intent response structure: {"intent": "intent_name", "key1": "value1", "key2": "value2", ...}
-
         session['conversation_history'].append({"role": "assistant", "content": intent_response})
 
         return jsonify({"response": intent_response, "chat_history": session['conversation_history'][-3:]})

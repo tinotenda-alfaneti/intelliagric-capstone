@@ -120,7 +120,7 @@ class DroneImageAnalysisResource(Resource):
         user_token = Config.AUTH_TOKEN
 
         try:
-            blobs = bucket.list_blobs(prefix=f'drone_images/{user_token}/')
+            blobs = bucket.list_blobs(prefix=f'drone_images/{user_token}')
 
             image_urls = []
             for blob in blobs:
@@ -130,6 +130,7 @@ class DroneImageAnalysisResource(Resource):
             if not image_urls:
                 return jsonify({"error": "No images found for analysis"}), 404
 
+            image_urls = image_urls[1:]
             user_input = "These are images from the drone as it was capturing images around the farm. Please provide an analysis and recommendation on whether I should watch out for any potential diseases. "
             identification = API.identify(image_urls, flag=0)
             best_suggestion = max(identification['result']['disease']['suggestions'], key=lambda x: x['probability'])['name']

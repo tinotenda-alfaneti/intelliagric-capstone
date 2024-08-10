@@ -99,7 +99,7 @@ class Notifications:
 
                 query = "Give me an alert message and a small recommendation for the disease from model. It should be less than 20 words"
                 message = Chat.refine_response(query, disease)
-                message = f"Alert: There have been multiple cases of {disease} detected in your area. Please take necessary precautions."
+                # message = f"Alert: There have been multiple cases of {disease} detected in your area. Please take necessary precautions."
 
 
                 if contact:

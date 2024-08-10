@@ -30,13 +30,13 @@ web_api.config['PERMANENT_SESSION_LIFETIME'] =  timedelta(minutes=45)
 
 Session(web_api)
 
-# ORIGIN_URL = "http://localhost:3000" #TODO: Replace with the deployed version
-ORIGIN_URL = "https://intelli-agric-react-app.vercel.app" #TODO: Replace with the deployed version
+ORIGIN_URL = "http://localhost:3000" #Uncomment for local version
+# ORIGIN_URL = "https://intelli-agric-react-app.vercel.app" #Uncomment for deployed version
 
-# secre key
+# secret key
 web_api.secret_key = os.urandom(24)
 
-CORS(web_api, supports_credentials=True, resources={r"/*": {"origins": [ORIGIN_URL,"https://intelli-agric-react-app.vercel.app/"]}})
+CORS(web_api, supports_credentials=True, resources={r"/*": {"origins": [ORIGIN_URL,"https://intelli-agric-react-app.vercel.app/", "http://localhost:3000"]}})
 
 authorizations = {
     'Bearer Auth': {

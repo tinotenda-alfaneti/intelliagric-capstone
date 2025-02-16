@@ -1,23 +1,9 @@
+import logging
 import numpy as np
-import os
 import requests
-import requests
-import datetime
+import json
 import pandas as pd 
-from src import HF_TOKEN
-from src.models.utils import API
-
-crop_yields_data = os.path.dirname(__file__) + "/ml_models/crops_dataset/crop_yields_dataset.csv"
-
-
-max_length = 100
-
-DISEASE_MODEL_ENDPOINT = "https://api-inference.huggingface.co/models/muAtarist/maize_disease_model"
-MARKET_MODEL_ENDPOINT = "https://predict-kasxmzorbq-od.a.run.app/predict"
-
-HEADERS = {"Authorization": "Bearer " + HF_TOKEN}
-
-YEAR = datetime.date.today().year
+from src.models.utils import API, DISEASE_MODEL_ENDPOINT, HEADERS, MARKET_MODEL_ENDPOINT, YEAR, crop_yields_data
 
 class Predict:
 
@@ -38,19 +24,22 @@ class Predict:
         try:
             highest_prob = max(response, key=lambda x: x['score'])
         except Exception as e:
-            print(f"Failed to get prediction. Error: {e}")
-            return f"Failed to get prediction. Error: {e}"
+            logging.error(f"Failed to get prediction. Error: {e}")
+            identification = API.identify([filename])
+            best_suggestion = max(identification['result']['disease']['suggestions'], key=lambda x: x['probability'])['name']
+            return {"disease": best_suggestion, "detailed_info": json.dumps(identification)}
         
         # Extract the label and score
         label = highest_prob['label']
         probability = highest_prob['score']
 
-        if probability < 0.6 and label.lower() in ["nofoliarsymptoms","unidentifieddisease"]:
-            return API.identify([filename])
+        if probability < 0.6 or label.lower() in ["nofoliarsymptoms","unidentifieddisease"]:
+
+            identification = API.identify([filename])
+            best_suggestion = max(identification['result']['disease']['suggestions'], key=lambda x: x['probability'])['name']
+            return {"disease": best_suggestion, "detailed_info": json.dumps(identification)}
         
-        # Format the string with the label and probability
-        output = {"model": "disease prediction", "disease_probability": f"{probability:.3f}", "crop": "maize", "recommendations": []}
-        # result = f"With {probability:.3f} probability, the disease is {label}."
+        output = {"model": "disease prediction", "disease":f"{label}", "disease_probability": f"{probability:.3f}", "crop": "maize", "recommendations": []}
         return output
     
 
@@ -90,11 +79,5 @@ class Predict:
         predicted_crop = data['Item']
         mean_yield = result[result['Item'] == predicted_crop]['mean'].values[0]
 
-        # if prediction > mean_yield - (0.75 * mean_yield):
-        #     demand_prediction = 'LOW'
-        # else:
-        #     demand_prediction = 'HIGH'
-
         output = {"model": "market prediction", "supply_prediction": prediction, "average_supply": mean_yield, "threshold": 75, "crop": predicted_crop, "country": data["Area"]}
-        # output = f"Demand for {predicted_crop} is likely going to be {demand_prediction} since supply prediction is {prediction} and past mean yield is {mean_yield}. [Assumption: Demand and supply are inversely proportional]"
         return output

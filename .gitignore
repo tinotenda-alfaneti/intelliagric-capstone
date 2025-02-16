@@ -3,9 +3,11 @@
 .env
 flask_session
 __pycache__
-fine-tuned-gpt2
-ml_models
 .vercel
 flask_session
 .vercel
 venv
+tests/resources/config.py
+.vscode
+.coverage
+cache_directory

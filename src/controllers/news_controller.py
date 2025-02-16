@@ -1,11 +1,18 @@
-from src import GNEWS_API_KEY, api, Resource, fields	
+import logging
+from src import GNEWS_API_KEY, api
 from flask import jsonify
 import json
 import urllib.request
+from flask_restx import fields, Resource
+
+from src.controllers.error_controller import handle_errors
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
 
 BASE_URL = "https://gnews.io/api/v4/search"
 
-ns_agriculture_news = api.namespace('agriculture-news', description='Agriculture news operations')
+ns_agriculture_news = api.namespace('agriculture_news', description='Agriculture news operations')
 
 # Define the models for Swagger documentation
 news_model = api.model('NewsArticle', {
@@ -20,6 +27,7 @@ news_model = api.model('NewsArticle', {
 
 @ns_agriculture_news.route('/')
 class AgricultureNewsResource(Resource):
+    @handle_errors
     @ns_agriculture_news.response(200, 'Success', [news_model])
     def get(self):
         """Fetches the latest agriculture news in Africa."""
@@ -30,7 +38,6 @@ class AgricultureNewsResource(Resource):
                 data = json.loads(response.read().decode("utf-8"))
                 articles = data.get("articles", [])
 
-                # Collecting article data
                 articles_data = []
                 for article in articles:
                     article_info = {
@@ -43,11 +50,10 @@ class AgricultureNewsResource(Resource):
                         "source": article["source"]["name"]
                     }
                     articles_data.append(article_info)
-                response = jsonify({"articles": articles_data})
-                response.status_code = 200
-                return response
+                return jsonify({"articles": articles_data})
         except Exception as e:
-            return jsonify({"error": str(e)}), 500
-        
+            response = jsonify({"error": str(e)})
+            response.status_code = 500
+            return response
 
-api.add_namespace(ns_agriculture_news, path='/agriculture-news')
+api.add_namespace(ns_agriculture_news, path='/agriculture_news')

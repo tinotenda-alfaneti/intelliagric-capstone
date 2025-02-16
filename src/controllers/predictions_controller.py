@@ -1,17 +1,18 @@
-from src import ORIGIN_URL, web_api, api, fields, Resource
-import json
-import numpy as np
+from src import api
 import logging
-from flask import request, session, jsonify, make_response
+from flask import request, session, jsonify
+from src.controllers.error_controller import InvalidDiseasePredictionError, handle_errors
 from src.models.predictions import Predict
 from src.models.chat import CHAT_PROMPT
 from src.models.chat import Chat
+from src.models.data_collection import DataCollection
+from flask_restx import fields, Resource
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-ns_predict_disease = api.namespace('predict-disease', description='Disease prediction operations')
-ns_predict_market = api.namespace('predict-market', description='Market prediction operations')
+ns_predict_disease = api.namespace('predict_disease', description='Disease prediction operations')
+ns_predict_market = api.namespace('predict_market', description='Market prediction operations')
 
 
 predict_disease_model = api.model('PredictDisease', {
@@ -27,6 +28,7 @@ predict_market_model = api.model('PredictMarket', {
 
 @ns_predict_disease.route('/')
 class PredictDiseaseResource(Resource):
+    @handle_errors
     @ns_predict_disease.expect(predict_disease_model)
     @ns_predict_disease.response(200, 'Success')
     def post(self):
@@ -37,18 +39,23 @@ class PredictDiseaseResource(Resource):
         crop_img =  request.json.get('path')
         user_input = request.json.get('message')
         
-        # model_response = Predict.maize_disease_prediction(TEST_IMG)
         model_response = Predict.maize_disease_prediction(crop_img)
+        if isinstance(model_response, str):
+            raise InvalidDiseasePredictionError()
+
         refined_response = Chat.refine_response(user_input, model_response)
+
+        # add prediction to database for verification and APIs
+        DataCollection.save_disease_prediction(crop_img, refined_response, model_response["disease"])
 
         # refined response structure:  {"refined": "disease prediction", "message": "There is an 80% chance that your tomato crop may"}
         session['conversation_history'].append({"role": "assistant", "content": refined_response})
-        final_response = {'intent': 'predict maize disease', 'message': refined_response}
-        return jsonify({'response': final_response, 'chat_history': session['conversation_history']})
+        return jsonify({'response': refined_response, 'chat_history': session['conversation_history'][-3:]})
 
 
 @ns_predict_market.route('/')
 class PredictMarketResource(Resource):
+    @handle_errors
     @ns_predict_market.expect(predict_market_model)
     @ns_predict_market.response(200, 'Success')
     def post(self):
@@ -65,10 +72,11 @@ class PredictMarketResource(Resource):
         market_response = Predict.market_prediction(user_data)
         refined_response = Chat.refine_response(user_input, market_response)
 
+        DataCollection.save_market_prediction(user_data["area"], user_data["item"], refined_response)
+
         # refined response structure: {"refined": "market prediction", "message": "The predicted supply of maize in Nigeria is high compared to the average of the past 16 years."}
         session['conversation_history'].append({"role": "assistant", "content": refined_response})
-        final_response = {'intent': 'predict agriculture market', 'message': refined_response}
-        return jsonify({'response': final_response, 'chat_history': session['conversation_history']})
+        return jsonify({'response': refined_response, 'chat_history': session['conversation_history'][-3:]})
 
-api.add_namespace(ns_predict_disease, path='/predict-disease')
-api.add_namespace(ns_predict_market, path='/predict-market')  
+api.add_namespace(ns_predict_disease, path='/predict_disease')
+api.add_namespace(ns_predict_market, path='/predict_market')  

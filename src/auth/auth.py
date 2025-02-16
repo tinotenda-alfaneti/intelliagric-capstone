@@ -1,13 +1,11 @@
-
-from src import logging
+import logging
 from firebase_admin import auth
 from functools import wraps
 from flask import request, jsonify
+from src.config.config import Config
 
 # Initialize logging
 logging.basicConfig(level=logging.DEBUG)
-
-#TODO: Put back the token
 
 def verify_id_token(uid):
     try:
@@ -36,7 +34,10 @@ def login_required(f):
             response = jsonify({"error": "Invalid token"})
             response.status_code = 401
             return response
-
+        Config.AUTH_TOKEN = id_token
         return f(*args, **kwargs)
     return decorated_function
-    
+
+def login_routine(token):
+
+    Config.AUTH_TOKEN = token
